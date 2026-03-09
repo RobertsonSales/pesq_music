@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 GrooveFinder - Dashboard de Gêneros Musicais</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --dark-bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--dark-bg);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        /* Dashboard Layout */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Sidebar - Categorias */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar h3 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #a8edea;
+            font-weight: 700;
+        }
+
+        .category-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .category-btn:hover, .category-btn.active {
+            background: var(--primary-gradient);
+            border-color: transparent;
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        .category-btn i {
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Main Content - Genre Grid */
+        .main-content {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .main-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .main-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, #a8edea 50%, #fed6e3 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .main-header p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.1rem;
+        }
+
+        /* Genre Cards Grid */
+        .genre-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+        }
+
+        .genre-card {
+            aspect-ratio: 1;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: none;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .genre-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .genre-card:hover::before {
+            opacity: 1;
+        }
+
+        .genre-card:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .genre-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .genre-card h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            z-index: 1;
+        }
+
+        /* Genre Gradients */
+        .genre-rock { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); }
+        .genre-pop { background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%); }
+        .genre-eletronica { background: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%); }
+        .genre-hiphop { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #333; }
+        .genre-jazz { background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%); }
+        .genre-classica { background: linear-gradient(135deg, #dfe6e9 0%, #b2bec3 100%); color: #333; }
+        .genre-reggae { background: linear-gradient(135deg, #55efc4 0%, #00b894 100%); color: #333; }
+        .genre-pagode { background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%); }
+        .genre-samba { background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%); color: #333; }
+        .genre-mpb { background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); }
+        .genre-blues { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .genre-country { background: linear-gradient(135deg, #fab1a0 0%, #e17055 100%); color: #333; }
+        .genre-rb { background: linear-gradient(135deg, #fd79a8 0%, #fdcb6e 100%); color: #333; }
+        .genre-metal { background: linear-gradient(135deg, #2d3436 0%, #000000 100%); }
+        .genre-indie { background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%); color: #333; }
+        .genre-kpop { background: linear-gradient(135deg, #ff7675 0%, #d63031 100%); }
+        .genre-forro { background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); color: #333; }
+        .genre-axe { background: linear-gradient(135deg, #fd79a8 0%, #feca57 100%); color: #333; }
+        .genre-bossa { background: linear-gradient(135deg, #74b9ff 0%, #a29bfe 100%); }
+        .genre-gospel { background: linear-gradient(135deg, #55a3ff 0%, #003d82 100%); }
+
+        /* Playlist Panel */
+        .playlist-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .playlist-panel h3 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #fed6e3;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .playlist-count {
+            background: var(--secondary-gradient);
+            color: #fff;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 0.85rem;
+        }
+
+        .playlist-item {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .playlist-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .playlist-link {
+            color: #a8edea;
+            text-decoration: none;
+            font-size: 0.85rem;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .playlist-link:hover {
+            color: #fff;
+        }
+
+        .btn-icon {
+            background: rgba(255, 107, 107, 0.8);
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
+        }
+
+        .btn-icon:hover {
+            background: #ff6b6b;
+            transform: scale(1.1);
+        }
+
+        .playlist-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-action {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .btn-add {
+            background: var(--accent-gradient);
+            color: #fff;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-share {
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: #fff;
+        }
+
+        .btn-share:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
+        }
+
+        .btn-clear {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-clear:hover {
+            background: rgba(255, 107, 107, 0.8);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 80vh;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #a8edea 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-close-modal {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-close-modal:hover {
+            background: rgba(255, 107, 107, 0.8);
+        }
+
+        .modal-body {
+            padding: 25px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .media-list {
+            list-style: none;
+        }
+
+        .media-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .media-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .media-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .media-info {
+            flex: 1;
+        }
+
+        .media-title {
+            color: #fff;
+            font-weight: 500;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .media-link {
+            color: #74b9ff;
+            font-size: 0.85rem;
+            text-decoration: none;
+        }
+
+        .media-link:hover {
+            text-decoration: underline;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .modal-footer {
+            padding: 20px 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-modal {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-confirm {
+            background: var(--primary-gradient);
+            color: #fff;
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Custom Link Modal */
+        .custom-link-input {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        .custom-link-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .custom-link-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+        }
+
+        .toast {
+            background: var(--primary-gradient);
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 250px 1fr 300px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar, .playlist-panel {
+                position: static;
+            }
+            .genre-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+        }
+
+        @media (max-width: 576px) {
+            .genre-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .main-header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar - Categorias -->
+        <aside class="sidebar">
+            <h3><i class="fas fa-filter"></i> Categorias</h3>
+            <button class="category-btn active" onclick="filterByCategory('all')">
+                <i class="fas fa-th-large"></i> Todos os Gêneros
+            </button>
+            <button class="category-btn" onclick="filterByCategory('internacional')">
+                <i class="fas fa-globe"></i> Internacional
+            </button>
+            <button class="category-btn" onclick="filterByCategory('brasileira')">
+                <i class="fas fa-flag"></i> Música Brasileira
+            </button>
+            <button class="category-btn" onclick="filterByCategory('eletronica')">
+                <i class="fas fa-bolt"></i> Eletrônica & Dance
+            </button>
+            <button class="category-btn" onclick="filterByCategory('classica')">
+                <i class="fas fa-violin"></i> Clássica & Jazz
+            </button>
+            <button class="category-btn" onclick="filterByCategory('popular')">
+                <i class="fas fa-fire"></i> Pop & Rock
+            </button>
+            <button class="category-btn" onclick="filterByCategory('urbana')">
+                <i class="fas fa-city"></i> Urbana & Hip-Hop
+            </button>
+            <button class="category-btn" onclick="filterByCategory('regional')">
+                <i class="fas fa-map-marker-alt"></i> Regional & Folk
+            </button>
+        </aside>
+
+        <!-- Main Content - Genre Dashboard -->
+        <main class="main-content">
+            <div class="main-header">
+                <h1><i class="fas fa-music"></i> GrooveFinder</h1>
+                <p>Selecione um gênero musical para explorar vídeos</p>
+            </div>
+
+            <div class="genre-grid" id="genreGrid">
+                <!-- Genres will be populated here -->
+            </div>
+        </main>
+
+        <!-- Playlist Panel -->
+        <aside class="playlist-panel">
+            <h3>
+                <i class="fas fa-list-music"></i> Sua Playlist
+                <span class="playlist-count" id="playlistCount">0/20</span>
+            </h3>
+
+            <div id="playlistContainer">
+                <div class="empty-state">
+                    <i class="fas fa-music"></i>
+                    <p>Playlist vazia</p>
+                </div>
+            </div>
+
+            <div class="playlist-actions">
+                <button class="btn-action btn-add" onclick="openCustomLinkModal()">
+                    <i class="fas fa-plus"></i> Adicionar Link
+                </button>
+                <button class="btn-action btn-share" onclick="sharePlaylist()">
+                    <i class="fab fa-whatsapp"></i> Compartilhar
+                </button>
+                <button class="btn-action btn-clear" onclick="clearPlaylist()">
+                    <i class="fas fa-trash"></i> Limpar
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Media Modal -->
+    <div class="modal-overlay" id="mediaModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="modalTitle">Selecionar Músicas</h4>
+                <button class="btn-close-modal" onclick="closeModal('mediaModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Carregando vídeos...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" onclick="closeModal('mediaModal')">Cancelar</button>
+                <button class="btn-modal btn-confirm" onclick="addSelectedToPlaylist()">
+                    <i class="fas fa-plus"></i> Adicionar Selecionados
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Link Modal -->
+    <div class="modal-overlay" id="customLinkModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h4 class="modal-title">Adicionar Link Personalizado</h4>
+                <button class="btn-close-modal" onclick="closeModal('customLinkModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 15px;">
+                    Cole o link do YouTube, Spotify, SoundCloud ou outra plataforma:
+                </p>
+                <input type="text" class="custom-link-input" id="customLinkInput" 
+                       placeholder="https://..." onkeypress="if(event.key==='Enter')addCustomLink()">
+                <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem;">
+                    <i class="fas fa-info-circle"></i> Máximo de 20 links na playlist
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-cancel" onclick="closeModal('customLinkModal')">Cancelar</button>
+                <button class="btn-modal btn-confirm" onclick="addCustomLink()">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Genre Data with Categories
+        const genres = [
+            { name: 'Rock', icon: 'fa-guitar', class: 'genre-rock', category: 'popular' },
+            { name: 'Pop', icon: 'fa-microphone', class: 'genre-pop', category: 'popular' },
+            { name: 'Eletrônica', icon: 'fa-bolt', class: 'genre-eletronica', category: 'eletronica' },
+            { name: 'Hip-Hop', icon: 'fa-record-vinyl', class: 'genre-hiphop', category: 'urbana' },
+            { name: 'Jazz', icon: 'fa-saxophone', class: 'genre-jazz', category: 'classica' },
+            { name: 'Clássica', icon: 'fa-violin', class: 'genre-classica', category: 'classica' },
+            { name: 'Reggae', icon: 'fa-leaf', class: 'genre-reggae', category: 'regional' },
+            { name: 'Pagode', icon: 'fa-users', class: 'genre-pagode', category: 'brasileira' },
+            { name: 'Samba', icon: 'fa-drum', class: 'genre-samba', category: 'brasileira' },
+            { name: 'MPB', icon: 'fa-music', class: 'genre-mpb', category: 'brasileira' },
+            { name: 'Blues', icon: 'fa-guitar', class: 'genre-blues', category: 'classica' },
+            { name: 'Country', icon: 'fa-hat-cowboy', class: 'genre-country', category: 'regional' },
+            { name: 'R&B', icon: 'fa-heart', class: 'genre-rb', category: 'urbana' },
+            { name: 'Metal', icon: 'fa-skull', class: 'genre-metal', category: 'popular' },
+            { name: 'Indie', icon: 'fa-seedling', class: 'genre-indie', category: 'popular' },
+            { name: 'K-Pop', icon: 'fa-star', class: 'genre-kpop', category: 'internacional' },
+            { name: 'Forró', icon: 'fa-hand-sparkles', class: 'genre-forro', category: 'brasileira' },
+            { name: 'Axé', icon: 'fa-sun', class: 'genre-axe', category: 'brasileira' },
+            { name: 'Bossa Nova', icon: 'fa-umbrella-beach', class: 'genre-bossa', category: 'brasileira' },
+            { name: 'Gospel', icon: 'fa-dove', class: 'genre-gospel', category: 'regional' }
+        ];
+
+        // YouTube API Key
+        const YOUTUBE_API_KEY = 'AIzaSyDDurTsa7i_xO6d3R4Mxr9EGMad-34zknc';
+
+        // State
+        let playlist = JSON.parse(localStorage.getItem('groove_playlist_v2')) || [];
+        let currentMediaItems = [];
+        let currentCategory = 'all';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            renderGenres();
+            updatePlaylistUI();
+        });
+
+        // Render Genre Cards
+        function renderGenres() {
+            const grid = document.getElementById('genreGrid');
+            grid.innerHTML = '';
+
+            const filteredGenres = currentCategory === 'all' 
+                ? genres 
+                : genres.filter(g => g.category === currentCategory || 
+                    (currentCategory === 'internacional' && 
+                        ['Rock', 'Pop', 'Eletrônica', 'Hip-Hop', 'Jazz', 'Clássica', 
+                         'Reggae', 'Blues', 'Country', 'R&B', 'Metal', 'Indie', 'K-Pop', 'Gospel'].includes(g.name)));
+
+            filteredGenres.forEach(genre => {
+                const card = document.createElement('div');
+                card.className = `genre-card ${genre.class}`;
+                card.onclick = function() { searchMusic(genre.name); };
+                card.innerHTML = `
+                    <i class="fas ${genre.icon} icon"></i>
+                    <h4>${genre.name}</h4>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Filter by Category
+        function filterByCategory(category) {
+            currentCategory = category;
+
+            // Update active button
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.category-btn').classList.add('active');
+
+            renderGenres();
+            showToast(`Filtrado: ${category === 'all' ? 'Todos os gêneros' : category}`, 'info');
+        }
+
+        // Search Music
+        async function searchMusic(genre) {
+            const modal = document.getElementById('mediaModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.textContent = `${genre} - Selecione as músicas`;
+            modalBody.innerHTML = `
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Carregando vídeos do YouTube...</p>
+                </div>
+            `;
+
+            modal.classList.add('active');
+
+            if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === 'AIzaSyDDurTsa7i_xO6d3R4Mxr9EGMad-34zknc') {
+                modalBody.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.7);">
+                        <i class="fas fa-exclamation-circle" style="font-size: 3rem; margin-bottom: 15px; color: #ff6b6b;"></i>
+                        <p>Configure sua API Key do YouTube no código</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(genre + ' music')}&type=video&maxResults=20&key=${YOUTUBE_API_KEY}`
+                );
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+
+                currentMediaItems = data.items;
+                displayMediaItems(data.items);
+
+            } catch (error) {
+                modalBody.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.7);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px; color: #ff6b6b;"></i>
+                        <p>Erro ao carregar: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display Media Items
+        function displayMediaItems(items) {
+            const modalBody = document.getElementById('modalBody');
+
+            if (items.length === 0) {
+                modalBody.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.7);">
+                        <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                        <p>Nenhum vídeo encontrado</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<ul class="media-list">';
+            items.forEach((item, index) => {
+                const videoId = item.id.videoId;
+                const title = item.snippet.title;
+                const link = `https://www.youtube.com/watch?v=${videoId}`;
+
+                html += `
+                    <li class="media-item">
+                        <input type="checkbox" class="media-checkbox" id="video-${index}" 
+                               value="${link}" data-title="${title.replace(/"/g, '&quot;')}" checked>
+                        <div class="media-info">
+                            <label for="video-${index}" style="cursor: pointer; display: block;">
+                                <span class="media-title">${title}</span>
+                            </label>
+                            <a href="${link}" target="_blank" class="media-link" onclick="event.stopPropagation()">
+                                <i class="fab fa-youtube"></i> Ver no YouTube
+                            </a>
+                        </div>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+
+            modalBody.innerHTML = html;
+        }
+
+        // Add Selected to Playlist
+        function addSelectedToPlaylist() {
+            const checkboxes = document.querySelectorAll('#mediaModal .media-checkbox:checked');
+
+            if (checkboxes.length === 0) {
+                showToast('Selecione pelo menos uma música', 'warning');
+                return;
+            }
+
+            let added = 0;
+            checkboxes.forEach(checkbox => {
+                const link = checkbox.value;
+                if (!playlist.includes(link)) {
+                    if (playlist.length >= 20) {
+                        showToast('Limite máximo de 20 links atingido!', 'warning');
+                        return;
+                    }
+                    playlist.push(link);
+                    added++;
+                }
+            });
+
+            if (added > 0) {
+                localStorage.setItem('groove_playlist_v2', JSON.stringify(playlist));
+                updatePlaylistUI();
+                closeModal('mediaModal');
+                showToast(`${added} música(s) adicionada(s)!`, 'success');
+            } else {
+                showToast('Músicas já estão na playlist', 'info');
+            }
+        }
+
+        // Update Playlist UI
+        function updatePlaylistUI() {
+            const container = document.getElementById('playlistContainer');
+            const count = document.getElementById('playlistCount');
+
+            count.textContent = `${playlist.length}/20`;
+
+            if (playlist.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-music"></i>
+                        <p>Playlist vazia</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            playlist.forEach((link, index) => {
+                html += `
+                    <div class="playlist-item">
+                        <a href="${link}" target="_blank" class="playlist-link" title="${link}">
+                            ${link.substring(0, 35)}${link.length > 35 ? '...' : ''}
+                        </a>
+                        <button class="btn-icon" onclick="removeFromPlaylist(${index})" title="Remover">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Remove from Playlist
+        function removeFromPlaylist(index) {
+            playlist.splice(index, 1);
+            localStorage.setItem('groove_playlist_v2', JSON.stringify(playlist));
+            updatePlaylistUI();
+            showToast('Música removida', 'info');
+        }
+
+        // Clear Playlist
+        function clearPlaylist() {
+            if (playlist.length === 0) {
+                showToast('Playlist já está vazia', 'info');
+                return;
+            }
+
+            if (confirm('Tem certeza que deseja limpar toda a playlist?')) {
+                playlist = [];
+                localStorage.setItem('groove_playlist_v2', JSON.stringify(playlist));
+                updatePlaylistUI();
+                showToast('Playlist limpa!', 'success');
+            }
+        }
+
+        // Open Custom Link Modal
+        function openCustomLinkModal() {
+            if (playlist.length >= 20) {
+                showToast('Limite máximo de 20 links atingido!', 'warning');
+                return;
+            }
+            document.getElementById('customLinkInput').value = '';
+            document.getElementById('customLinkModal').classList.add('active');
+        }
+
+        // Add Custom Link
+        function addCustomLink() {
+            const input = document.getElementById('customLinkInput');
+            const link = input.value.trim();
+
+            if (!link) {
+                showToast('Digite um link válido', 'error');
+                return;
+            }
+
+            if (!isValidURL(link)) {
+                showToast('URL inválida', 'error');
+                return;
+            }
+
+            if (playlist.includes(link)) {
+                showToast('Link já existe na playlist', 'warning');
+                return;
+            }
+
+            if (playlist.length >= 20) {
+                showToast('Limite máximo atingido', 'warning');
+                return;
+            }
+
+            playlist.push(link);
+            localStorage.setItem('groove_playlist_v2', JSON.stringify(playlist));
+            updatePlaylistUI();
+            closeModal('customLinkModal');
+            showToast('Link adicionado!', 'success');
+        }
+
+        // Validate URL
+        function isValidURL(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        // Share Playlist
+        function sharePlaylist() {
+            if (playlist.length === 0) {
+                showToast('Playlist vazia!', 'warning');
+                return;
+            }
+
+            const text = `🎵 Minha Playlist GrooveFinder:
+
+${playlist.join('
+')}`;
+            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        // Close Modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Close modal on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // Show Toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'exclamation-circle';
+            if (type === 'warning') icon = 'exclamation-triangle';
+
+            toast.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+            }
+        });
+    </script>
+</body>
+</html>

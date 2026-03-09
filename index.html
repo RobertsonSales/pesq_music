@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎵 GrooveFinder - Dashboard de Gêneros Musicais</title>
+    <title>🎵 Pesq Music - Dashboard de Gêneros Musicais</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        /* (mesmo estilo do original, sem alterações) */
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
@@ -584,28 +585,28 @@
         <!-- Sidebar - Categorias -->
         <aside class="sidebar">
             <h3><i class="fas fa-filter"></i> Categorias</h3>
-            <button class="category-btn active" onclick="filterByCategory('all')">
+            <button class="category-btn active" onclick="filterByCategory('all', event)">
                 <i class="fas fa-th-large"></i> Todos os Gêneros
             </button>
-            <button class="category-btn" onclick="filterByCategory('internacional')">
+            <button class="category-btn" onclick="filterByCategory('internacional', event)">
                 <i class="fas fa-globe"></i> Internacional
             </button>
-            <button class="category-btn" onclick="filterByCategory('brasileira')">
+            <button class="category-btn" onclick="filterByCategory('brasileira', event)">
                 <i class="fas fa-flag"></i> Música Brasileira
             </button>
-            <button class="category-btn" onclick="filterByCategory('eletronica')">
+            <button class="category-btn" onclick="filterByCategory('eletronica', event)">
                 <i class="fas fa-bolt"></i> Eletrônica & Dance
             </button>
-            <button class="category-btn" onclick="filterByCategory('classica')">
+            <button class="category-btn" onclick="filterByCategory('classica', event)">
                 <i class="fas fa-violin"></i> Clássica & Jazz
             </button>
-            <button class="category-btn" onclick="filterByCategory('popular')">
+            <button class="category-btn" onclick="filterByCategory('popular', event)">
                 <i class="fas fa-fire"></i> Pop & Rock
             </button>
-            <button class="category-btn" onclick="filterByCategory('urbana')">
+            <button class="category-btn" onclick="filterByCategory('urbana', event)">
                 <i class="fas fa-city"></i> Urbana & Hip-Hop
             </button>
-            <button class="category-btn" onclick="filterByCategory('regional')">
+            <button class="category-btn" onclick="filterByCategory('regional', event)">
                 <i class="fas fa-map-marker-alt"></i> Regional & Folk
             </button>
         </aside>
@@ -613,7 +614,7 @@
         <!-- Main Content - Genre Dashboard -->
         <main class="main-content">
             <div class="main-header">
-                <h1><i class="fas fa-music"></i> GrooveFinder</h1>
+                <h1><i class="fas fa-music"></i> Pesq Music</h1>
                 <p>Selecione um gênero musical para explorar vídeos</p>
             </div>
 
@@ -704,7 +705,10 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        // Genre Data with Categories
+        // ---------- CONFIGURAÇÃO DA API DO YOUTUBE ----------
+        const YOUTUBE_API_KEY = 'AIzaSyDDurTsa7i_xO6d3R4Mxr9EGMad-34zknc'; // Substitua pela sua chave, se necessário
+
+        // ---------- DADOS DOS GÊNEROS (mantido original) ----------
         const genres = [
             { name: 'Rock', icon: 'fa-guitar', class: 'genre-rock', category: 'popular' },
             { name: 'Pop', icon: 'fa-microphone', class: 'genre-pop', category: 'popular' },
@@ -728,21 +732,18 @@
             { name: 'Gospel', icon: 'fa-dove', class: 'genre-gospel', category: 'regional' }
         ];
 
-        // YouTube API Key
-        const YOUTUBE_API_KEY = 'AIzaSyDDurTsa7i_xO6d3R4Mxr9EGMad-34zknc';
-
-        // State
+        // ---------- ESTADO GLOBAL ----------
         let playlist = JSON.parse(localStorage.getItem('groove_playlist_v2')) || [];
-        let currentMediaItems = [];
+        let currentMediaItems = [];   // armazena os vídeos retornados pela API
         let currentCategory = 'all';
 
-        // Initialize
+        // ---------- INICIALIZAÇÃO ----------
         document.addEventListener('DOMContentLoaded', function() {
             renderGenres();
             updatePlaylistUI();
         });
 
-        // Render Genre Cards
+        // ---------- FUNÇÕES DE RENDERIZAÇÃO DOS GÊNEROS ----------
         function renderGenres() {
             const grid = document.getElementById('genreGrid');
             grid.innerHTML = '';
@@ -766,21 +767,24 @@
             });
         }
 
-        // Filter by Category
-        function filterByCategory(category) {
+        // ---------- FILTRO POR CATEGORIA (corrigido: recebe evento) ----------
+        function filterByCategory(category, event) {
             currentCategory = category;
 
-            // Update active button
+            // Atualiza classe ativa nos botões
             document.querySelectorAll('.category-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.target.closest('.category-btn').classList.add('active');
+            if (event && event.target) {
+                const btn = event.target.closest('.category-btn');
+                if (btn) btn.classList.add('active');
+            }
 
             renderGenres();
             showToast(`Filtrado: ${category === 'all' ? 'Todos os gêneros' : category}`, 'info');
         }
 
-        // Search Music
+        // ---------- BUSCA NA API DO YOUTUBE (corrigida) ----------
         async function searchMusic(genre) {
             const modal = document.getElementById('mediaModal');
             const modalTitle = document.getElementById('modalTitle');
@@ -796,15 +800,9 @@
 
             modal.classList.add('active');
 
-            if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === 'AIzaSyDDurTsa7i_xO6d3R4Mxr9EGMad-34zknc') {
-                modalBody.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.7);">
-                        <i class="fas fa-exclamation-circle" style="font-size: 3rem; margin-bottom: 15px; color: #ff6b6b;"></i>
-                        <p>Configure sua API Key do YouTube no código</p>
-                    </div>
-                `;
-                return;
-            }
+            // AQUI ESTAVA O ERRO: a condição abaixo impedia a requisição
+            // if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === 'AIzaSyDDurTsa7i_xO6d3R4Mxr9EGMad-34zknc') { ... }
+            // Agora removemos essa trava e fazemos a requisição diretamente.
 
             try {
                 const response = await fetch(
@@ -816,7 +814,7 @@
                     throw new Error(data.error.message);
                 }
 
-                currentMediaItems = data.items;
+                currentMediaItems = data.items; // guarda para adicionar depois
                 displayMediaItems(data.items);
 
             } catch (error) {
@@ -824,16 +822,17 @@
                     <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.7);">
                         <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px; color: #ff6b6b;"></i>
                         <p>Erro ao carregar: ${error.message}</p>
+                        <p style="font-size:0.9rem; margin-top:10px;">Verifique sua chave de API ou conexão.</p>
                     </div>
                 `;
             }
         }
 
-        // Display Media Items
+        // ---------- EXIBE OS VÍDEOS NO MODAL ----------
         function displayMediaItems(items) {
             const modalBody = document.getElementById('modalBody');
 
-            if (items.length === 0) {
+            if (!items || items.length === 0) {
                 modalBody.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.7);">
                         <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px;"></i>
@@ -869,7 +868,7 @@
             modalBody.innerHTML = html;
         }
 
-        // Add Selected to Playlist
+        // ---------- ADICIONAR SELECIONADOS À PLAYLIST ----------
         function addSelectedToPlaylist() {
             const checkboxes = document.querySelectorAll('#mediaModal .media-checkbox:checked');
 
@@ -901,7 +900,7 @@
             }
         }
 
-        // Update Playlist UI
+        // ---------- ATUALIZA INTERFACE DA PLAYLIST ----------
         function updatePlaylistUI() {
             const container = document.getElementById('playlistContainer');
             const count = document.getElementById('playlistCount');
@@ -935,7 +934,7 @@
             container.innerHTML = html;
         }
 
-        // Remove from Playlist
+        // ---------- REMOVER DA PLAYLIST ----------
         function removeFromPlaylist(index) {
             playlist.splice(index, 1);
             localStorage.setItem('groove_playlist_v2', JSON.stringify(playlist));
@@ -943,7 +942,7 @@
             showToast('Música removida', 'info');
         }
 
-        // Clear Playlist
+        // ---------- LIMPAR PLAYLIST ----------
         function clearPlaylist() {
             if (playlist.length === 0) {
                 showToast('Playlist já está vazia', 'info');
@@ -958,7 +957,19 @@
             }
         }
 
-        // Open Custom Link Modal
+        // ---------- COMPARTILHAR PLAYLIST NO WHATSAPP ----------
+        function sharePlaylist() {
+            if (playlist.length === 0) {
+                showToast('Playlist vazia!', 'warning');
+                return;
+            }
+
+            const text = `🎵 Minha Playlist:\n\n${playlist.join('\n')}`;
+            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        // ---------- MODAL DE LINK PERSONALIZADO ----------
         function openCustomLinkModal() {
             if (playlist.length >= 20) {
                 showToast('Limite máximo de 20 links atingido!', 'warning');
@@ -968,7 +979,6 @@
             document.getElementById('customLinkModal').classList.add('active');
         }
 
-        // Add Custom Link
         function addCustomLink() {
             const input = document.getElementById('customLinkInput');
             const link = input.value.trim();
@@ -1000,7 +1010,6 @@
             showToast('Link adicionado!', 'success');
         }
 
-        // Validate URL
         function isValidURL(string) {
             try {
                 new URL(string);
@@ -1010,27 +1019,12 @@
             }
         }
 
-        // Share Playlist
-        function sharePlaylist() {
-            if (playlist.length === 0) {
-                showToast('Playlist vazia!', 'warning');
-                return;
-            }
-
-            const text = `🎵 Minha Playlist GrooveFinder:
-
-${playlist.join('
-')}`;
-            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-            window.open(url, '_blank');
-        }
-
-        // Close Modal
+        // ---------- FECHAR MODAL ----------
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
         }
 
-        // Close modal on overlay click
+        // Fechar modal ao clicar no overlay
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', function(e) {
                 if (e.target === this) {
@@ -1039,7 +1033,7 @@ ${playlist.join('
             });
         });
 
-        // Show Toast
+        // ---------- TOAST ----------
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -1060,7 +1054,7 @@ ${playlist.join('
             }, 3000);
         }
 
-        // Keyboard shortcuts
+        // ---------- TECLA ESC PARA FECHAR MODAIS ----------
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));

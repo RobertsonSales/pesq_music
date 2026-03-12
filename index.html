@@ -11,7 +11,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         /* ══════════════════════════════════════════
-           TOKENS & RESET
+           TOKENS & RESET (código original completo)
         ══════════════════════════════════════════ */
         :root {
             --bg-deep:    #0d0d1f;
@@ -55,7 +55,7 @@
         }
 
         /* ══════════════════════════════════════════
-           TOP NAVBAR (mobile + tablet)
+           TOP NAVBAR (mobile + tablet) - original
         ══════════════════════════════════════════ */
         .top-nav {
             display: none;
@@ -120,7 +120,7 @@
         }
 
         /* ══════════════════════════════════════════
-           DESKTOP LAYOUT
+           DESKTOP LAYOUT - original
         ══════════════════════════════════════════ */
         .app-shell {
             display: grid;
@@ -133,7 +133,7 @@
         }
 
         /* ══════════════════════════════════════════
-           SIDEBAR
+           SIDEBAR - original
         ══════════════════════════════════════════ */
         .sidebar {
             background: var(--bg-glass);
@@ -195,7 +195,7 @@
         }
 
         /* ══════════════════════════════════════════
-           MAIN CONTENT
+           MAIN CONTENT - original
         ══════════════════════════════════════════ */
         .main-col {
             background: var(--bg-card);
@@ -223,7 +223,7 @@
 
         .main-header p { color: var(--text-dim); font-size: 0.95rem; }
 
-        /* Genre Grid */
+        /* Genre Grid - original */
         .genre-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -263,7 +263,7 @@
         .genre-card .g-icon { font-size: clamp(1.8rem, 4vw, 2.4rem); margin-bottom: 8px; }
         .genre-card h4 { font-size: clamp(0.78rem, 1.5vw, 0.95rem); font-weight: 700; text-align: center; padding: 0 6px; z-index: 1; }
 
-        /* Genre colours */
+        /* Genre colours - original */
         .g-rock { background: linear-gradient(135deg,#ff6b6b,#ee5a24); }
         .g-pop  { background: linear-gradient(135deg,#feca57,#ff9ff3); }
         .g-ele  { background: linear-gradient(135deg,#48dbfb,#0abde3); }
@@ -286,7 +286,7 @@
         .g-gos  { background: linear-gradient(135deg,#55a3ff,#003d82); }
 
         /* ══════════════════════════════════════════
-           PLAYLIST PANEL
+           PLAYLIST PANEL - original
         ══════════════════════════════════════════ */
         .playlist-panel {
             background: var(--bg-glass);
@@ -326,7 +326,7 @@
             font-weight: 700;
         }
 
-        /* Category tabs */
+        /* Category tabs - original */
         .pl-tabs {
             display: flex;
             gap: 5px;
@@ -354,7 +354,7 @@
         .pl-tab.active { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); border-color: transparent; color: #fff; }
         .pl-tab .tc { background: rgba(255,255,255,0.2); border-radius: 10px; padding: 0 5px; margin-left: 3px; font-size: 0.65rem; }
 
-        /* Playlist scroll area */
+        /* Playlist scroll area - original */
         .pl-scroll {
             max-height: 320px;
             overflow-y: auto;
@@ -366,7 +366,7 @@
         .pl-scroll::-webkit-scrollbar { width: 3px; }
         .pl-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
 
-        /* Playlist item */
+        /* Playlist item - original */
         .pl-item {
             display: flex;
             align-items: flex-start;
@@ -449,7 +449,7 @@
         .ico-btn.del   { background: rgba(245,87,108,0.25); }
         .ico-btn.del:hover   { background: var(--red); }
 
-        /* Empty state */
+        /* Empty state - original */
         .empty-state {
             text-align: center;
             padding: 28px 16px;
@@ -459,7 +459,7 @@
         .empty-state i { font-size: 2.4rem; margin-bottom: 8px; opacity: 0.4; display: block; }
         .empty-state p { font-size: 0.85rem; }
 
-        /* Playlist action buttons */
+        /* Playlist action buttons - original */
         .pl-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
 
         .act-btn {
@@ -491,7 +491,7 @@
         .act-clear:hover { background: rgba(245,87,108,0.7); color:#fff; border-color:transparent; }
 
         /* ══════════════════════════════════════════
-           MOBILE DRAWER (sidebar + playlist)
+           MOBILE DRAWER (sidebar + playlist) - original
         ══════════════════════════════════════════ */
         .drawer-overlay {
             display: none;
@@ -542,7 +542,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Bottom navigation bar for mobile */
+        /* Bottom navigation bar for mobile - original */
         .bottom-nav {
             display: none;
             position: fixed;
@@ -582,7 +582,7 @@
         .bn-item.active { color: var(--accent-3); }
 
         /* ══════════════════════════════════════════
-           MODALS — BASE
+           MODALS — BASE - original
         ══════════════════════════════════════════ */
         .modal-wrap {
             display: none;
@@ -626,7 +626,7 @@
             }
         }
 
-        /* Handle bar for bottom sheet on mobile */
+        /* Handle bar for bottom sheet on mobile - original */
         .modal-handle {
             width: 40px;
             height: 4px;
@@ -722,7 +722,7 @@
         .m-btn.sel-all { background: var(--bg-glass); color: var(--text-dim); border: 1px solid var(--border); font-size: 0.78rem; padding: 0 13px; }
         .m-btn.sel-all:active { color: var(--text); }
 
-        /* Loading spinner */
+        /* Loading spinner - original */
         .loading-wrap { text-align: center; padding: 44px 20px; color: var(--text-dim); }
 
         .spinner {
@@ -736,7 +736,7 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Media result items */
+        /* Media result items - original */
         .media-list { list-style: none; }
 
         .media-item {
@@ -790,7 +790,7 @@
         .m-meta { font-size: 0.74rem; color: var(--text-dim); margin-bottom: 4px; }
 
         /* ══════════════════════════════════════════
-           CATEGORY PICKER (visual grid — custom link)
+           CATEGORY PICKER (visual grid) - original
         ══════════════════════════════════════════ */
         .cat-picker-label {
             display: block;
@@ -865,7 +865,7 @@
 
         .cat-pick-card.selected .cp-check { display: flex; }
 
-        /* Selected category display */
+        /* Selected category display - original */
         .cat-selected-display {
             display: flex;
             align-items: center;
@@ -881,7 +881,7 @@
 
         .cat-selected-display.hidden { display: none; }
 
-        /* Custom link form */
+        /* Custom link form - original */
         .f-label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px; }
 
         .f-input {
@@ -903,7 +903,7 @@
         .f-hint { font-size: 0.76rem; color: var(--text-ghost); display: flex; gap: 6px; align-items: flex-start; margin-top: -6px; }
 
         /* ══════════════════════════════════════════
-           PLAYER MODAL — fully isolated
+           PLAYER MODAL — fully isolated - original (com modificações)
         ══════════════════════════════════════════ */
         .player-wrap {
             display: none;
@@ -965,7 +965,7 @@
             white-space: nowrap;
         }
 
-        /* iframe area — ISOLATED */
+        /* iframe area — FULLY ISOLATED - original */
         .pl-video-area {
             flex: 1;
             position: relative;
@@ -982,7 +982,7 @@
             display: block;
         }
 
-        /* No-embed fallback */
+        /* No-embed fallback - original */
         .no-embed-msg {
             position: absolute;
             inset: 0;
@@ -999,7 +999,7 @@
         .no-embed-msg i { font-size: 3rem; color: var(--text-ghost); }
         .no-embed-msg p { color: var(--text-dim); font-size: 0.9rem; }
 
-        /* Progress dots */
+        /* Progress dots - original */
         .pl-dots {
             display: flex;
             gap: 3px;
@@ -1025,7 +1025,7 @@
         .pl-dot.done { background: rgba(255,255,255,0.35); }
         .pl-dot.now  { background: linear-gradient(90deg, var(--accent-1), var(--accent-3)); height: 6px; }
 
-        /* Player controls bar */
+        /* Player controls bar - original */
         .pl-ctrl {
             display: flex;
             align-items: center;
@@ -1064,7 +1064,7 @@
             border-color: transparent;
         }
 
-        /* Queue panel */
+        /* Queue panel - original */
         .pl-queue {
             max-height: 140px;
             overflow-y: auto;
@@ -1103,7 +1103,117 @@
         .q-art { font-size: 0.7rem; color: var(--text-ghost); flex-shrink: 0; }
 
         /* ══════════════════════════════════════════
-           TOAST
+           NOVOS ESTILOS: MINI PLAYER E BUSCA WEB
+        ══════════════════════════════════════════ */
+        .mini-player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(13,13,31,0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            z-index: 1300;
+            gap: 10px;
+        }
+
+        .mini-player-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .mini-player-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mini-player-meta {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mini-player-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .mini-btn {
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.18s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mini-btn:active { background: rgba(255,255,255,0.18); }
+
+        /* Web search modal */
+        #webSearchModal .modal-body {
+            padding: 16px 20px;
+        }
+
+        .web-search-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .web-search-input input {
+            flex: 1;
+            padding: 13px 14px;
+            background: rgba(255,255,255,0.08);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 16px;
+        }
+
+        .web-search-input button {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            border: none;
+            border-radius: var(--radius-sm);
+            color: #fff;
+            padding: 0 20px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.18s;
+        }
+
+        .web-search-input button:active { transform: scale(0.96); }
+
+        /* Ajuste para responsividade */
+        @media (max-width: 480px) {
+            .mini-player { height: 60px; }
+            .mini-player-title { font-size: 0.8rem; }
+        }
+
+        /* ══════════════════════════════════════════
+           TOAST - original
         ══════════════════════════════════════════ */
         .toast-zone {
             position: fixed;
@@ -1136,7 +1246,7 @@
         }
 
         /* ══════════════════════════════════════════
-           RESPONSIVE BREAKPOINTS
+           RESPONSIVE BREAKPOINTS - original
         ══════════════════════════════════════════ */
         /* Large tablet */
         @media (max-width: 1100px) {
@@ -1259,9 +1369,9 @@
     </button>
 </nav>
 
-<!-- ═══════════════ MODALS ═══════════════════════ -->
+<!-- ═══════════════ MODAIS ═══════════════════════ -->
 
-<!-- Search results modal -->
+<!-- Search results modal (original) -->
 <div class="modal-wrap" id="searchModal" role="dialog" aria-modal="true" aria-labelledby="searchModalTitle">
     <div class="modal-box">
         <div class="modal-handle"></div>
@@ -1282,7 +1392,7 @@
     </div>
 </div>
 
-<!-- Custom link modal -->
+<!-- Custom link modal (original modificado) -->
 <div class="modal-wrap" id="customModal" role="dialog" aria-modal="true" aria-label="Adicionar Link">
     <div class="modal-box" style="max-width:560px;">
         <div class="modal-handle"></div>
@@ -1308,8 +1418,6 @@
             <label class="cat-picker-label">
                 Gênero / Categoria <span>*</span> — selecione um card:
             </label>
-
-            <!-- Selected display -->
             <div class="cat-selected-display hidden" id="catSelectedDisplay">
                 <i class="fas fa-tag"></i>
                 <span id="catSelectedText">—</span>
@@ -1317,8 +1425,16 @@
                     <i class="fas fa-times-circle"></i>
                 </button>
             </div>
-
             <div class="cat-picker-grid" id="catPickerGrid"></div>
+
+            <!-- NOVO: Campo de busca para pesquisa no YouTube -->
+            <label class="f-label">Pesquisar no YouTube (preenche automaticamente)</label>
+            <div style="display:flex; gap:8px; margin-bottom:16px;">
+                <input class="f-input" id="webSearchTerm" placeholder="Digite sua busca..." style="margin-bottom:0;">
+                <button class="m-btn confirm" onclick="openWebSearch()" style="white-space:nowrap; padding:0 16px;">
+                    <i class="fab fa-youtube"></i> Buscar
+                </button>
+            </div>
 
             <!-- URL -->
             <label class="f-label">URL *</label>
@@ -1338,7 +1454,31 @@
     </div>
 </div>
 
-<!-- ═══════════════ PLAYER (full-screen isolated) ══════════════════ -->
+<!-- NOVO MODAL: Pesquisa Web (YouTube) -->
+<div class="modal-wrap" id="webSearchModal" role="dialog" aria-modal="true" aria-label="Pesquisar no YouTube">
+    <div class="modal-box">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h4><i class="fab fa-youtube"></i> Pesquisar no YouTube</h4>
+            <button class="m-close" onclick="closeModal('webSearchModal')" aria-label="Fechar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="web-search-input">
+                <input type="text" id="webSearchInput" placeholder="Artista, música, álbum..." value="">
+                <button onclick="performWebSearch()"><i class="fas fa-search"></i> Buscar</button>
+            </div>
+            <div id="webSearchResults" class="media-list">
+                <div class="loading-wrap"><div class="spinner"></div><p>Digite um termo e busque</p></div>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <div></div>
+            <button class="m-btn cancel" onclick="closeModal('webSearchModal')">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════ PLAYER (modificado) ══════════════════ -->
 <div class="player-wrap" id="playerWrap" role="dialog" aria-modal="true" aria-label="Reprodutor">
 
     <!-- Top bar -->
@@ -1353,7 +1493,12 @@
         </div>
         <div class="pl-bar-right">
             <span class="pl-counter" id="plCounter">—</span>
-            <button class="m-close" onclick="closePlayer()" aria-label="Fechar player (Esc)">
+            <!-- Botão minimizar (seta para baixo) -->
+            <button class="m-close" onclick="minimizePlayer()" title="Minimizar" aria-label="Minimizar player" style="background:var(--bg-glass);">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <!-- Botão fechar de verdade (encerra) -->
+            <button class="m-close" onclick="closePlayer()" title="Fechar (encerra)" aria-label="Fechar e encerrar">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -1362,7 +1507,7 @@
     <!-- Progress dots -->
     <div class="pl-dots" id="plDots"></div>
 
-    <!-- iframe — FULLY ISOLATED: sandbox blocks top-navigation, popups, storage access -->
+    <!-- iframe — FULLY ISOLATED -->
     <div class="pl-video-area" id="plVideoArea">
         <iframe id="plIframe"
             src="about:blank"
@@ -1389,14 +1534,27 @@
             <span>Próximo</span> <i class="fas fa-step-forward"></i>
         </button>
     </div>
+</div>
 
+<!-- MINI PLAYER (fixo na parte inferior) -->
+<div class="mini-player" id="miniPlayer">
+    <div class="mini-player-info">
+        <div class="mini-player-title" id="miniTitle">—</div>
+        <div class="mini-player-meta" id="miniMeta">—</div>
+    </div>
+    <div class="mini-player-actions">
+        <button class="mini-btn" onclick="plPrev()" title="Anterior" aria-label="Anterior"><i class="fas fa-step-backward"></i></button>
+        <button class="mini-btn" onclick="maximizePlayer()" title="Maximizar" aria-label="Maximizar"><i class="fas fa-chevron-up"></i></button>
+        <button class="mini-btn" onclick="plNext()" title="Próximo" aria-label="Próximo"><i class="fas fa-step-forward"></i></button>
+        <button class="mini-btn" onclick="closePlayer()" title="Fechar" aria-label="Fechar"><i class="fas fa-times"></i></button>
+    </div>
 </div>
 
 <!-- Toast zone -->
 <div class="toast-zone" id="toastZone" aria-live="polite"></div>
 
 <!-- ══════════════════════════════════════════
-     JAVASCRIPT
+     JAVASCRIPT (código original + melhorias)
 ══════════════════════════════════════════ -->
 <script>
 /* ─── CONFIG ─────────────────────────────────── */
@@ -1775,6 +1933,7 @@ function shareWA() {
 function openCustomModal() {
     if (playlist.length >= 20) { toast('Limite de 20 itens!', 'warning'); return; }
     ['fTitle','fArtist','fAlbum','fUrl'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('webSearchTerm').value = '';
     clearCatPick();
     openModal('customModal');
 }
@@ -1806,17 +1965,86 @@ function addCustomLink() {
     toast(`"${title}" adicionado em ${cat}!`, 'success');
 }
 
+/* ─── NOVAS FUNÇÕES: PESQUISA WEB ────────────── */
+function openWebSearch() {
+    const term = document.getElementById('webSearchTerm').value.trim();
+    if (!term) { toast('Digite um termo para buscar', 'warning'); return; }
+    document.getElementById('webSearchInput').value = term;
+    document.getElementById('webSearchResults').innerHTML = '<div class="loading-wrap"><div class="spinner"></div><p>Buscando…</p></div>';
+    openModal('webSearchModal');
+    performWebSearch(true); // já busca ao abrir
+}
+
+async function performWebSearch(keepModalOpen) {
+    const term = document.getElementById('webSearchInput').value.trim();
+    if (!term) { toast('Digite um termo', 'warning'); return; }
+
+    const resultsDiv = document.getElementById('webSearchResults');
+    resultsDiv.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><p>Carregando…</p></div>';
+
+    try {
+        const r = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(term)}&type=video&maxResults=20&key=${YT_KEY}`
+        );
+        const d = await r.json();
+        if (d.error) throw new Error(d.error.message);
+        const items = d.items || [];
+        if (!items.length) {
+            resultsDiv.innerHTML = '<div class="loading-wrap"><i class="fas fa-inbox" style="font-size:2.5rem;opacity:0.4;"></i><p>Nenhum resultado.</p></div>';
+            return;
+        }
+
+        resultsDiv.innerHTML = `<ul class="media-list">${items.map((item, i) => {
+            const vid   = item.id.videoId;
+            const title = item.snippet.title;
+            const ch    = item.snippet.channelTitle;
+            const yr    = (item.snippet.publishedAt || '').substring(0,4);
+            const thumb = item.snippet.thumbnails?.default?.url || '';
+            const url   = `https://www.youtube.com/watch?v=${vid}`;
+            return `
+            <li class="media-item" style="cursor:pointer;" onclick="selectWebResult('${url}', '${ea(title)}', '${ea(ch)}', '${ea('YouTube ' + yr)}')">
+                <img class="m-thumb" src="${thumb}" alt="" loading="lazy">
+                <div class="m-info">
+                    <span class="m-title">${title}</span>
+                    <div class="m-meta">${ch} · ${yr}</div>
+                </div>
+                <i class="fas fa-copy" style="color:var(--accent-3); margin-left:8px;" title="Copiar link"></i>
+            </li>`;
+        }).join('')}</ul>`;
+    } catch(e) {
+        resultsDiv.innerHTML = `<div class="loading-wrap"><i class="fas fa-exclamation-triangle" style="color:var(--red);"></i><p>Erro: ${e.message}</p></div>`;
+    }
+}
+
+async function selectWebResult(url, title, artist, album) {
+    try {
+        await navigator.clipboard.writeText(url);
+        toast('Link copiado para a área de transferência!', 'success');
+    } catch (e) {
+        toast('Não foi possível copiar', 'error');
+    }
+
+    // Preenche os campos do formulário
+    document.getElementById('fUrl').value = url;
+    document.getElementById('fTitle').value = decodeHTMLEntities(title);
+    document.getElementById('fArtist').value = decodeHTMLEntities(artist);
+    document.getElementById('fAlbum').value = decodeHTMLEntities(album);
+
+    closeModal('webSearchModal');
+}
+
+function decodeHTMLEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+}
+
 /* ─── PLAYER ─────────────────────────────────── */
 function embedURL(url, vid) {
     const id = vid || extractVid(url);
 
     if (id) {
         // YouTube via youtube-nocookie.com — privacy-enhanced mode
-        // rel=0            → no related videos from other channels
-        // modestbranding=1 → reduced YouTube branding
-        // playsinline=1    → iOS inline playback
-        // iv_load_policy=3 → no annotations
-        // enablejsapi=1    → postMessage for autoplay detection
         return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&enablejsapi=1&origin=${encodeURIComponent(location.origin || 'https://pesqmusic.app')}`;
     }
 
@@ -1870,14 +2098,41 @@ function playAllChecked() {
 function openPlayer() {
     if (!queue.length) return;
     document.getElementById('playerWrap').classList.add('open');
+    document.getElementById('miniPlayer').style.display = 'none'; // esconde mini player se estiver visível
     loadTrack(qIdx);
 }
 
 function closePlayer() {
     document.getElementById('playerWrap').classList.remove('open');
+    document.getElementById('miniPlayer').style.display = 'none';
     // Reset iframe to blank — fully stops any media and clears the browsing context
     const iframe = document.getElementById('plIframe');
     iframe.src = 'about:blank';
+    queue = [];
+    qIdx = 0;
+}
+
+function minimizePlayer() {
+    document.getElementById('playerWrap').classList.remove('open');
+    document.getElementById('miniPlayer').style.display = 'flex';
+    updateMiniPlayer();
+}
+
+function maximizePlayer() {
+    document.getElementById('miniPlayer').style.display = 'none';
+    document.getElementById('playerWrap').classList.add('open');
+    if (queue.length > 0) loadTrack(qIdx);
+}
+
+function updateMiniPlayer() {
+    if (!queue.length || qIdx < 0 || qIdx >= queue.length) {
+        document.getElementById('miniPlayer').style.display = 'none';
+        return;
+    }
+    const item = queue[qIdx];
+    document.getElementById('miniTitle').textContent = item.title || '—';
+    const parts = [item.artist, item.album, item.category].filter(Boolean);
+    document.getElementById('miniMeta').textContent = parts.join(' · ') || 'Pesq Music';
 }
 
 function loadTrack(idx) {
@@ -1901,7 +2156,6 @@ function loadTrack(idx) {
     if (src) {
         document.getElementById('plIframe').src = src;
     } else {
-        // Show fallback message inside the isolated area
         document.getElementById('plIframe').src = 'about:blank';
         area.insertAdjacentHTML('beforeend', `
             <div class="no-embed-msg">
@@ -1921,11 +2175,12 @@ function loadTrack(idx) {
     buildDots();
     buildQueue();
     scrollToActive();
+    updateMiniPlayer();
 }
 
-function plPrev() { if (qIdx > 0) loadTrack(qIdx - 1); }
+function plPrev() { if (qIdx > 0) { loadTrack(qIdx - 1); updateMiniPlayer(); } }
 function plNext() {
-    if (qIdx < queue.length - 1) loadTrack(qIdx + 1);
+    if (qIdx < queue.length - 1) { loadTrack(qIdx + 1); updateMiniPlayer(); }
     else toast('Fim da fila', 'info');
 }
 
@@ -1968,7 +2223,7 @@ window.addEventListener('message', e => {
     try {
         const d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
         if (d?.event === 'onStateChange' && d?.info === 0) {
-            if (qIdx < queue.length - 1) setTimeout(plNext, 1600);
+            if (qIdx < queue.length - 1) setTimeout(() => { plNext(); updateMiniPlayer(); }, 1600);
         }
     } catch(_) {}
 });
@@ -2017,15 +2272,22 @@ document.querySelectorAll('.modal-wrap').forEach(wrap => {
 /* ─── KEYBOARD ───────────────────────────────── */
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-        closePlayer();
-        document.querySelectorAll('.modal-wrap.open').forEach(m => {
-            m.classList.remove('open');
-        });
-        closeDrawers();
+        if (document.getElementById('playerWrap').classList.contains('open')) {
+            minimizePlayer(); // minimiza em vez de fechar
+        } else {
+            document.querySelectorAll('.modal-wrap.open').forEach(m => {
+                m.classList.remove('open');
+            });
+            closeDrawers();
+        }
     }
     if (document.getElementById('playerWrap').classList.contains('open')) {
         if (e.key === 'ArrowRight') plNext();
         if (e.key === 'ArrowLeft')  plPrev();
+    }
+    if (document.getElementById('miniPlayer').style.display === 'flex') {
+        if (e.key === 'ArrowRight') { e.preventDefault(); plNext(); }
+        if (e.key === 'ArrowLeft')  { e.preventDefault(); plPrev(); }
     }
 });
 

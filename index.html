@@ -1597,15 +1597,19 @@
     </div>
 </div>
 
-<!-- Dica PiP -->
+<!-- Dica PiP / Background -->
 <div class="pip-note" id="pipNote">
     <i class="fas fa-info-circle"></i>
-    <span>Para continuar assistindo em segundo plano, use o botão <i class="fas fa-clone"></i> Picture-in-Picture.</span>
+    <span>O áudio continua em segundo plano. Para vídeo flutuante, toque em <i class="fas fa-clone"></i> ou use o controle de mídia do sistema.</span>
     <button class="pip-btn" onclick="document.getElementById('pipNote').style.display='none'">Entendi</button>
 </div>
 
 <!-- Toast zone -->
 <div class="toast-zone" id="toastZone" aria-live="polite"></div>
+
+<!-- Silent audio — mantém sessão de áudio ativa em segundo plano (iOS / PWA) -->
+<audio id="silentAudio" loop preload="auto" style="display:none"
+       src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"></audio>
 
 <!-- ══════════════════════════════════════════
      JAVASCRIPT (código original + melhorias)
@@ -2093,12 +2097,129 @@ function decodeHTMLEntities(text) {
     return textarea.value;
 }
 
+/* ─── BACKGROUND AUDIO KEEP-ALIVE ────────────────
+   Mantém a sessão de áudio ativa no iOS/PWA mesmo
+   após o usuário sair do app ou bloquear a tela.
+   Técnica: AudioContext + silent <audio> element.
+─────────────────────────────────────────────── */
+let _audioCtxUnlocked = false;
+let _silentSrc        = null;
+let _wakeLock         = null;
+
+function unlockAudioSession() {
+    if (_audioCtxUnlocked) return;
+    _audioCtxUnlocked = true;
+
+    // 1) Inicia o <audio> silencioso — sinaliza ao iOS que existe sessão de áudio ativa
+    const sil = document.getElementById('silentAudio');
+    if (sil) {
+        sil.volume = 0.001; // quase zero — inaudível
+        sil.play().catch(() => {});
+    }
+
+    // 2) AudioContext para manter o processo de áudio vivo (necesário no iOS Safari / PWA)
+    try {
+        const AC  = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+            const ctx = new AC();
+            const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); // 1 s de silêncio
+            _silentSrc = ctx.createBufferSource();
+            _silentSrc.buffer = buf;
+            _silentSrc.loop   = true;
+            _silentSrc.connect(ctx.destination);
+            _silentSrc.start(0);
+        }
+    } catch(_) {}
+}
+
+/* ─── MEDIA SESSION API ──────────────────────────
+   Registra metadados e controles de mídia no OS.
+   Permite controlar reprodução pela tela de bloqueio,
+   centro de controle e notificações do Android/iOS.
+─────────────────────────────────────────────── */
+function setupMediaSession(item) {
+    if (!('mediaSession' in navigator)) return;
+
+    // Thumbnail do YouTube como artwork (se disponível)
+    const vid      = item.videoId || extractVid(item.url);
+    const artworks = vid ? [
+        { src: `https://img.youtube.com/vi/${vid}/mqdefault.jpg`, sizes: '320x180', type: 'image/jpeg' },
+        { src: `https://img.youtube.com/vi/${vid}/hqdefault.jpg`,  sizes: '480x360', type: 'image/jpeg' },
+    ] : [];
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+        title:  item.title  || 'Pesq Music',
+        artist: item.artist || 'Pesq Music',
+        album:  item.album  || item.category || '',
+        artwork: artworks,
+    });
+
+    // Action handlers — permitem controle pela tela de bloqueio / controle central
+    const safe = fn => { try { navigator.mediaSession.setActionHandler(...fn); } catch(_) {} };
+    safe(['play',          () => sendYTCommand('playVideo')]);
+    safe(['pause',         () => sendYTCommand('pauseVideo')]);
+    safe(['previoustrack', () => { plPrev(); updateMiniPlayer(); }]);
+    safe(['nexttrack',     () => { plNext(); updateMiniPlayer(); }]);
+    safe(['seekbackward',  () => sendYTCommand('seekTo', -10)]);   // -10 s (best-effort)
+    safe(['seekforward',   () => sendYTCommand('seekTo', +10)]);   // +10 s
+
+    // Declara estado "playing" — mantém o OS ciente de que há reprodução ativa
+    try { navigator.mediaSession.playbackState = 'playing'; } catch(_) {}
+}
+
+/* ─── YOUTUBE POSTMESSAGE HELPER ────────────────── */
+function sendYTCommand(func, arg) {
+    const iframe = document.getElementById('plIframe');
+    if (!iframe || !iframe.contentWindow) return;
+    try {
+        iframe.contentWindow.postMessage(
+            JSON.stringify({ event: 'command', func, args: arg !== undefined ? [arg] : [] }),
+            '*'
+        );
+    } catch(_) {}
+}
+
+/* ─── VISIBILITY CHANGE — RECUPERA REPRODUÇÃO ────
+   Quando o usuário volta ao app após tê-lo minimizado,
+   reenvia o comando "play" ao iframe do YouTube.
+   (O YouTube pausa automaticamente quando a aba fica
+   oculta em alguns browsers/SO — isto reverte.)
+─────────────────────────────────────────────── */
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        // Página ficando oculta: garante que o Media Session está declarado "playing"
+        try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; } catch(_) {}
+    } else {
+        // Página voltando ao foco: re-envia play ao YouTube iframe
+        if (queue.length && qIdx >= 0 && qIdx < queue.length) {
+            setTimeout(() => sendYTCommand('playVideo'), 350);
+        }
+    }
+});
+
+/* ─── SCREEN WAKE LOCK (evita apagar tela durante reprodução) ── */
+async function acquireWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+        _wakeLock = await navigator.wakeLock.request('screen');
+        // Re-adquire se o lock for liberado automaticamente (ex: ao voltar ao foco)
+        _wakeLock.addEventListener('release', () => {
+            if (queue.length && !document.hidden) acquireWakeLock();
+        });
+    } catch(_) {}
+}
+
+async function releaseWakeLock() {
+    if (_wakeLock) { try { await _wakeLock.release(); } catch(_) {} _wakeLock = null; }
+}
+
 /* ─── PLAYER ─────────────────────────────────── */
 function embedURL(url, vid) {
     const id = vid || extractVid(url);
 
     if (id) {
         // YouTube via youtube-nocookie.com — privacy-enhanced mode
+        // &enablejsapi=1 é essencial para postMessage commands funcionarem
         return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&enablejsapi=1&origin=${encodeURIComponent(location.origin || 'https://pesqmusic.app')}`;
     }
 
@@ -2152,21 +2273,29 @@ function playAllChecked() {
 function openPlayer() {
     if (!queue.length) return;
     document.getElementById('playerWrap').classList.add('open');
-    document.getElementById('miniPlayer').style.display = 'none'; // esconde mini player se estiver visível
+    document.getElementById('miniPlayer').style.display = 'none';
     loadTrack(qIdx);
+    // Inicia keep-alive de áudio na primeira interação do usuário
+    unlockAudioSession();
+    acquireWakeLock();
 }
 
 function closePlayer() {
     document.getElementById('playerWrap').classList.remove('open');
     document.getElementById('miniPlayer').style.display = 'none';
-    // Reset iframe to blank — fully stops any media and clears the browsing context
+    // Reset iframe para blank — para completamente a mídia
     const iframe = document.getElementById('plIframe');
     iframe.src = 'about:blank';
     queue = [];
-    qIdx = 0;
+    qIdx  = 0;
+    // Libera wake lock e limpa media session
+    releaseWakeLock();
+    try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'; } catch(_) {}
 }
 
 function minimizePlayer() {
+    // NOTA: O iframe NÃO é destruído — apenas a UI é ocultada.
+    // O YouTube continua reproduzindo em segundo plano dentro desta aba.
     document.getElementById('playerWrap').classList.remove('open');
     document.getElementById('miniPlayer').style.display = 'flex';
     updateMiniPlayer();
@@ -2180,7 +2309,11 @@ function minimizePlayer() {
 function maximizePlayer() {
     document.getElementById('miniPlayer').style.display = 'none';
     document.getElementById('playerWrap').classList.add('open');
-    if (queue.length > 0) loadTrack(qIdx);
+    // Recarrega apenas se não houver mídia ativa (iframe vazio)
+    const iframe = document.getElementById('plIframe');
+    if (!iframe.src || iframe.src === 'about:blank') {
+        if (queue.length > 0) loadTrack(qIdx);
+    }
 }
 
 function updateMiniPlayer() {
@@ -2214,6 +2347,8 @@ function loadTrack(idx) {
 
     if (src) {
         document.getElementById('plIframe').src = src;
+        // Registra metadados na Media Session API do OS
+        setupMediaSession(item);
     } else {
         document.getElementById('plIframe').src = 'about:blank';
         area.insertAdjacentHTML('beforeend', `
@@ -2276,31 +2411,54 @@ function scrollToActive() {
     }, 120);
 }
 
-// YouTube postMessage auto-advance
+// YouTube postMessage: auto-advance + recuperação de estado
 window.addEventListener('message', e => {
-    if (!autoPlay) return;
     try {
         const d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+
+        // Vídeo terminou (state=0) → avança automaticamente se autoPlay=true
         if (d?.event === 'onStateChange' && d?.info === 0) {
-            if (qIdx < queue.length - 1) setTimeout(() => { plNext(); updateMiniPlayer(); }, 1600);
+            if (autoPlay && qIdx < queue.length - 1) {
+                setTimeout(() => { plNext(); updateMiniPlayer(); }, 1600);
+            }
+        }
+
+        // Player iniciou (state=1 = playing) → atualiza Media Session para "playing"
+        if (d?.event === 'onStateChange' && d?.info === 1) {
+            try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; } catch(_) {}
+        }
+
+        // Player pausou (state=2) → atualiza Media Session para "paused"
+        if (d?.event === 'onStateChange' && d?.info === 2) {
+            try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; } catch(_) {}
         }
     } catch(_) {}
 });
 
 /* ─── PICTURE-IN-PICTURE ─────────────────────── */
 async function requestPictureInPicture() {
-    if (!document.pictureInPictureEnabled) {
-        toast('Picture-in-Picture não é suportado neste navegador', 'warning');
-        return;
+    // Tenta ativar PiP via API nativa no iframe do player
+    const iframe = document.getElementById('plIframe');
+
+    // Chrome Android / Safari iOS 16+: tenta via Document PiP ou elemento de vídeo interno
+    if (document.pictureInPictureEnabled) {
+        // Verifica se há algum elemento <video> na página principal que possamos usar
+        const videos = document.querySelectorAll('video');
+        for (const v of videos) {
+            if (!v.paused) {
+                try { await v.requestPictureInPicture(); return; } catch(_) {}
+            }
+        }
     }
-    // Tenta encontrar um elemento de vídeo dentro do iframe (não é possível por segurança)
-    // Em vez disso, orientamos o usuário a usar o menu de contexto do vídeo.
-    toast('Clique com o botão direito no vídeo e selecione "Picture-in-Picture"', 'info');
-    // Mostra a dica novamente
+
+    // Fallback: orienta o usuário — no YouTube, o botão PiP nativo aparece
+    // no canto do vídeo ao interagir com ele, ou nas notificações do sistema
+    toast('Toque no vídeo e selecione o botão ⊡ Picture-in-Picture, ou minimize o navegador — o áudio continuará tocando.', 'info');
+
     document.getElementById('pipNote').style.display = 'flex';
     setTimeout(() => {
         document.getElementById('pipNote').style.display = 'none';
-    }, 5000);
+    }, 6000);
 }
 
 /* ─── DRAWERS (mobile) ───────────────────────── */

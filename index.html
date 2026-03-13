@@ -1983,8 +1983,27 @@ function shareWA() {
         return l;
     });
 
-    const text = `🎵 *Minha Playlist — Pesq Music*\n\n${lines.join('\n\n')}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    const text    = `🎵 *Minha Playlist — Pesq Music*\n\n${lines.join('\n\n')}`;
+    const encoded = encodeURIComponent(text);
+
+    // Scheme nativo — funciona em WebView/APK Android sem necessidade de abrir browser
+    const waNative = `whatsapp://send?text=${encoded}`;
+    // Fallback web — para browsers normais onde o scheme não é interceptado
+    const waWeb    = `https://wa.me/?text=${encoded}`;
+
+    // Tenta abrir pelo scheme nativo via link invisível
+    const a = document.createElement('a');
+    a.href = waNative;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Se após 900 ms a página ainda está em foco (app não abriu),
+    // assume que o WhatsApp não está instalado e usa a URL web
+    setTimeout(() => {
+        if (document.hasFocus()) window.open(waWeb, '_blank');
+    }, 900);
 }
 
 /* ─── CUSTOM LINK ────────────────────────────── */

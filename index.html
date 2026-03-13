@@ -731,6 +731,28 @@
         .m-btn.sel-all { background: var(--bg-glass); color: var(--text-dim); border: 1px solid var(--border); font-size: 0.78rem; padding: 0 13px; }
         .m-btn.sel-all:active { color: var(--text); }
 
+        /* Botão Renovar Lista */
+        .m-btn.renovar {
+            background: linear-gradient(135deg, #f7971e, var(--gold));
+            color: #1a1a2e;
+            font-size: 0.78rem;
+            padding: 0 13px;
+        }
+        .m-btn.renovar:active  { transform: translateY(1px); }
+        .m-btn.renovar:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+        @media (hover: hover) { .m-btn.renovar:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(255,210,0,0.4); } }
+
+        /* Contador de página no modal */
+        .search-page-info {
+            font-size: 0.72rem;
+            color: var(--text-ghost);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        .search-page-info b { color: var(--accent-3); }
+
         /* Loading spinner - original */
         .loading-wrap { text-align: center; padding: 44px 20px; color: var(--text-dim); }
 
@@ -1427,9 +1449,22 @@
         <div class="modal-body" id="searchModalBody">
             <div class="loading-wrap"><div class="spinner"></div><p>Carregando…</p></div>
         </div>
-        <div class="modal-foot">
-            <button class="m-btn sel-all" onclick="toggleSelectAll()"><i class="fas fa-check-square"></i> Marcar/Desmarcar Todos</button>
-            <div style="display:flex;gap:8px;">
+        <div class="modal-foot" style="flex-wrap:wrap; gap:8px;">
+            <!-- Linha superior: Marcar todos + info de página + Renovar -->
+            <div style="display:flex; align-items:center; gap:8px; width:100%; flex-wrap:wrap;">
+                <button class="m-btn sel-all" onclick="toggleSelectAll()">
+                    <i class="fas fa-check-square"></i> Marcar/Desmarcar Todos
+                </button>
+                <span class="search-page-info" id="searchPageInfo" style="display:none;">
+                    <i class="fas fa-layer-group"></i> Lista <b id="searchPageNum">1</b>
+                    · <span id="searchVariantLabel"></span>
+                </span>
+                <button class="m-btn renovar" id="btnRenovar" onclick="renovarLista()" style="margin-left:auto;" disabled>
+                    <i class="fas fa-sync-alt"></i> Renovar Lista
+                </button>
+            </div>
+            <!-- Linha inferior: Cancelar + Adicionar -->
+            <div style="display:flex; gap:8px; margin-left:auto;">
                 <button class="m-btn cancel" onclick="closeModal('searchModal')">Cancelar</button>
                 <button class="m-btn confirm" onclick="addSelectedToPlaylist()"><i class="fas fa-plus"></i> Adicionar</button>
             </div>
@@ -1666,6 +1701,28 @@ let queue    = [];
 let qIdx     = 0;
 let autoPlay = true;
 
+/* ─── SEARCH PAGINATION STATE ────────────────────
+   Controla a renovação dinâmica da lista de resultados.
+─────────────────────────────────────────────── */
+let searchNextPageToken = null;   // token da próxima página retornado pela API
+let searchPageCount     = 1;      // contador de página exibido ao usuário
+let searchVariantIdx    = 0;      // índice do modificador de query atual
+
+// Modificadores rotativos — cada renovação que esgota as páginas usa um diferente,
+// garantindo variedade quase infinita de resultados para o mesmo gênero.
+const SEARCH_VARIANTS = [
+    { label: 'Músicas',          mod: 'music'           },
+    { label: 'Clipes Oficiais',  mod: 'official video'  },
+    { label: 'Ao Vivo',          mod: 'live performance'},
+    { label: 'Remix',            mod: 'remix'           },
+    { label: 'Acústico',         mod: 'acoustic'        },
+    { label: 'Top Hits',         mod: 'top hits'        },
+    { label: 'Playlist',         mod: 'playlist mix'    },
+    { label: 'Clássicos',        mod: 'classic'         },
+    { label: 'Novidades',        mod: 'new releases 2025'},
+    { label: 'Covers',           mod: 'cover'           },
+];
+
 /* ─── BOOT ───────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
     buildCatButtons();
@@ -1750,19 +1807,53 @@ function clearCatPick() {
 /* ─── YOUTUBE SEARCH ─────────────────────────── */
 async function searchYT(genre) {
     currentGenre = genre;
+    // Resetar estado de paginação ao abrir uma nova busca de gênero
+    searchNextPageToken = null;
+    searchPageCount     = 1;
+    searchVariantIdx    = 0;
+
     document.getElementById('searchModalTitle').textContent = `${genre} — Selecionar músicas`;
     document.getElementById('searchModalBody').innerHTML =
         `<div class="loading-wrap"><div class="spinner"></div><p>Carregando do YouTube…</p></div>`;
+    _updateSearchPageUI();
     openModal('searchModal');
+    await _fetchSearchPage(genre);
+}
+
+async function renovarLista() {
+    if (!currentGenre) return;
+    document.getElementById('btnRenovar').disabled = true;
+    document.getElementById('searchModalBody').innerHTML =
+        `<div class="loading-wrap"><div class="spinner"></div><p>Buscando novos resultados…</p></div>`;
+    await _fetchSearchPage(currentGenre);
+}
+
+async function _fetchSearchPage(genre) {
+    const variant = SEARCH_VARIANTS[searchVariantIdx % SEARCH_VARIANTS.length];
+    const query   = `${genre} ${variant.mod}`;
+    let   url     = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${YT_KEY}`;
+
+    if (searchNextPageToken) {
+        url += `&pageToken=${encodeURIComponent(searchNextPageToken)}`;
+    }
 
     try {
-        const r = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(genre + ' music')}&type=video&maxResults=20&key=${YT_KEY}`
-        );
+        const r = await fetch(url);
         const d = await r.json();
         if (d.error) throw new Error(d.error.message);
-        searchItems = d.items || [];
+
+        searchItems         = d.items || [];
+        searchNextPageToken = d.nextPageToken || null;
+
+        // Se não há mais páginas para este modificador, avança para o próximo
+        if (!searchNextPageToken) {
+            searchVariantIdx++;
+        }
+
         renderSearchItems(searchItems, genre);
+        _updateSearchPageUI();
+        searchPageCount++;
+
     } catch(e) {
         document.getElementById('searchModalBody').innerHTML = `
             <div class="loading-wrap">
@@ -1770,6 +1861,26 @@ async function searchYT(genre) {
                 <p style="color:var(--text-dim);">Erro: ${e.message}</p>
                 <p style="font-size:0.8rem;color:var(--text-ghost);margin-top:6px;">Verifique a chave de API.</p>
             </div>`;
+    }
+
+    document.getElementById('btnRenovar').disabled = false;
+}
+
+function _updateSearchPageUI() {
+    const btn       = document.getElementById('btnRenovar');
+    const info      = document.getElementById('searchPageInfo');
+    const numEl     = document.getElementById('searchPageNum');
+    const varLabel  = document.getElementById('searchVariantLabel');
+    const variant   = SEARCH_VARIANTS[searchVariantIdx % SEARCH_VARIANTS.length];
+
+    btn.disabled = false;
+
+    if (searchPageCount > 1) {
+        info.style.display    = 'flex';
+        numEl.textContent     = searchPageCount;
+        varLabel.textContent  = variant.label;
+    } else {
+        info.style.display    = 'none';
     }
 }
 

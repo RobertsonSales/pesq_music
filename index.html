@@ -15,7 +15,7 @@
         &quot;theme_color&quot;: &quot;#0d0d1f&quot;,
         &quot;icons&quot;: []
     }">
-    <title>🎵 Pesq Music</title>
+    <title>🎵 Pesq Music & Player</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -126,6 +126,26 @@
             color: #fff;
             min-width: 22px;
             text-align: center;
+        }
+
+        .nav-support-btn {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: #1a1a2e;
+            font-weight: 800;
+            box-shadow: 0 8px 18px rgba(245,87,108,0.22);
+        }
+
+        .nav-support-btn:hover {
+            background: linear-gradient(135deg, #f7a8ff, #ff6c87);
+            transform: translateY(-1px);
+        }
+
+        .nav-support-btn:active {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            transform: translateY(0);
         }
 
         /* ══════════════════════════════════════════
@@ -469,7 +489,7 @@
         .empty-state p { font-size: 0.85rem; }
 
         /* Playlist action buttons - original */
-        .pl-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+        .pl-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
 
         .act-btn {
             padding: 0 8px;
@@ -496,6 +516,8 @@
         .act-add:hover   { box-shadow: 0 6px 18px rgba(79,172,254,0.4); }
         .act-share { background: linear-gradient(135deg,#25d366,#128c7e); color:#fff; }
         .act-share:hover { box-shadow: 0 6px 18px rgba(37,211,102,0.4); }
+        .act-support { background: linear-gradient(135deg,#f093fb,#f5576c); color:#1a1a2e; }
+        .act-support:hover { box-shadow: 0 6px 18px rgba(245,87,108,0.38); }
         .act-clear { background: var(--bg-glass); color: var(--text-dim); border: 1px solid var(--border); }
         .act-clear:hover { background: rgba(245,87,108,0.7); color:#fff; border-color:transparent; }
 
@@ -1351,7 +1373,9 @@
     <button class="nav-btn" onclick="openDrawer('left')" aria-label="Categorias">
         <i class="fas fa-sliders-h"></i><span>Filtros</span>
     </button>
-    <span class="nav-logo"><i class="fas fa-music"></i> Pesq Music</span>
+    <button class="nav-btn nav-support-btn" onclick="openSupportModal()" aria-label="Apoiar via PIX">
+        <i class="fas fa-heart"></i><span>Apoiar via PIX</span>
+    </button>
     <button class="nav-btn" onclick="openDrawer('right')" aria-label="Playlist">
         <i class="fas fa-list-music"></i>
         <span class="badge" id="navBadge">0</span>
@@ -1390,7 +1414,7 @@
     <!-- Main -->
     <main class="main-col">
         <div class="main-header">
-            <h1><i class="fas fa-music"></i> Pesq Music</h1>
+            <h1><i class="fas fa-music"></i> Pesq Music & Player</h1>
             <p>Selecione um gênero para explorar vídeos</p>
         </div>
         <div class="genre-grid" id="genreGrid"></div>
@@ -1532,14 +1556,14 @@
             <button class="m-close" onclick="closeModal('supportModal')" aria-label="Fechar"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body" style="text-align:center;">
-            <p style="font-size:1rem;margin-bottom:20px;">Pesq Music é 100% gratuita e sem anúncios.<br>Feita com ❤️ por Robertson Guimarães.</p>
+            <p style="font-size:1rem;margin-bottom:20px;">Pesq Music & Playeré 100% gratuita e sem anúncios.<br>Feita com ❤️ por Robertson Guimarães.</p>
             
             <div style="background:rgba(255,255,255,0.08);padding:20px;border-radius:16px;margin:0 auto 20px;max-width:260px;">
                 <div style="margin-bottom:12px;"><i class="fas fa-qrcode" style="font-size:2.5rem;color:var(--accent-3);"></i></div>
                 <img id="pixQR" src="" alt="QR Code PIX" style="width:100%;max-width:220px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
                 <div style="margin-top:16px;">
                     <strong style="display:block;font-size:0.95rem;color:var(--text-dim);">Chave PIX (e-mail)</strong>
-                    <span id="pixKeyDisplay" style="font-size:1.15rem;font-weight:700;color:#fff;word-break:break-all;">robertguima@gmail.com</span>
+                    <span id="pixKeyDisplay" style="font-size:1.15rem;font-weight:700;color:#fff;word-break:break-all;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="04766b6661767063716d6965446369656d682a676b69">[email&#160;protected]</a></span>
                 </div>
             </div>
 
@@ -1650,7 +1674,7 @@
 <!-- ══════════════════════════════════════════
      JAVASCRIPT (código original + apoio PIX)
 ══════════════════════════════════════════ -->
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ─── CONFIG ─────────────────────────────────── */
 const YT_KEY = 'AIzaSyDDurTsa7i_xO6d3R4Mxr9EGMad-34zknc';
 
@@ -1965,18 +1989,14 @@ function buildPlaylistHTML() {
             <button class="act-btn act-add"   onclick="openCustomModal()">
                 <i class="fas fa-plus" aria-hidden="true"></i> Adicionar
             </button>
+            <button class="act-btn act-support" onclick="openSupportModal()">
+                <i class="fas fa-heart" aria-hidden="true"></i> Apoiar PIX
+            </button>
             <button class="act-btn act-share" onclick="shareWA()">
                 <i class="fab fa-whatsapp" aria-hidden="true"></i> Compartilhar
             </button>
             <button class="act-btn act-clear" onclick="clearPl()">
                 <i class="fas fa-trash" aria-hidden="true"></i> Limpar
-            </button>
-        </div>
-        <!-- Apoio PIX – adicionado de forma discreta (não altera layout existente) -->
-        <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);text-align:center;">
-            <button onclick="openSupportModal()" class="act-btn" 
-                    style="background:linear-gradient(135deg,#f093fb,#f5576c);color:#1a1a2e;width:100%;">
-                <i class="fas fa-heart"></i> Apoiar o Pesq Music com PIX
             </button>
         </div>`;
 }

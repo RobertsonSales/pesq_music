@@ -315,7 +315,7 @@
         .g-gos  { background: linear-gradient(135deg,#55a3ff,#003d82); }
 
         /* ══════════════════════════════════════════
-           PLAYLIST PANEL - original
+           PLAYLIST PANEL - original (com ajustes nos botões)
         ══════════════════════════════════════════ */
         .playlist-panel {
             background: var(--bg-glass);
@@ -488,12 +488,24 @@
         .empty-state i { font-size: 2.4rem; margin-bottom: 8px; opacity: 0.4; display: block; }
         .empty-state p { font-size: 0.85rem; }
 
-        /* Playlist action buttons - original (MODIFICADO: removido botão Apoiar PIX) */
-        .pl-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+        /* Playlist action buttons - MODIFICADO: melhor distribuição */
+        .pl-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        /* Em telas pequenas, muda para 2 colunas */
+        @media (max-width: 480px) {
+            .pl-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
 
         .act-btn {
-            padding: 0 8px;
-            height: 42px;
+            padding: 0 6px;
+            height: 44px;
             border: none;
             border-radius: var(--radius-sm);
             font-weight: 700;
@@ -505,6 +517,8 @@
             gap: 6px;
             transition: all 0.22s;
             -webkit-tap-highlight-color: transparent;
+            white-space: nowrap;
+            min-width: 0;
         }
 
         .act-btn:hover { transform: translateY(-2px); }
@@ -2503,7 +2517,7 @@ function toast(msg, type = 'info') {
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
         self.addEventListener('install', e => self.skipWaiting());
-        self.addEventListener('activate', e => e.waitUntil(clients.claim());
+        self.addEventListener('activate', e => e.waitUntil(clients.claim()));
     `)).catch(console.error);
 }
 </script>

@@ -731,28 +731,6 @@
         .m-btn.sel-all { background: var(--bg-glass); color: var(--text-dim); border: 1px solid var(--border); font-size: 0.78rem; padding: 0 13px; }
         .m-btn.sel-all:active { color: var(--text); }
 
-        /* Botão Renovar Lista */
-        .m-btn.renovar {
-            background: linear-gradient(135deg, #f7971e, var(--gold));
-            color: #1a1a2e;
-            font-size: 0.78rem;
-            padding: 0 13px;
-        }
-        .m-btn.renovar:active  { transform: translateY(1px); }
-        .m-btn.renovar:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
-        @media (hover: hover) { .m-btn.renovar:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(255,210,0,0.4); } }
-
-        /* Contador de página no modal */
-        .search-page-info {
-            font-size: 0.72rem;
-            color: var(--text-ghost);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            white-space: nowrap;
-        }
-        .search-page-info b { color: var(--accent-3); }
-
         /* Loading spinner - original */
         .loading-wrap { text-align: center; padding: 44px 20px; color: var(--text-dim); }
 
@@ -1373,7 +1351,7 @@
     <button class="nav-btn" onclick="openDrawer('left')" aria-label="Categorias">
         <i class="fas fa-sliders-h"></i><span>Filtros</span>
     </button>
-    <span class="nav-logo"><i class="fas fa-music"></i> My Player Music</span>
+    <span class="nav-logo"><i class="fas fa-music"></i> Pesq Music</span>
     <button class="nav-btn" onclick="openDrawer('right')" aria-label="Playlist">
         <i class="fas fa-list-music"></i>
         <span class="badge" id="navBadge">0</span>
@@ -1449,22 +1427,9 @@
         <div class="modal-body" id="searchModalBody">
             <div class="loading-wrap"><div class="spinner"></div><p>Carregando…</p></div>
         </div>
-        <div class="modal-foot" style="flex-wrap:wrap; gap:8px;">
-            <!-- Linha superior: Marcar todos + info de página + Renovar -->
-            <div style="display:flex; align-items:center; gap:8px; width:100%; flex-wrap:wrap;">
-                <button class="m-btn sel-all" onclick="toggleSelectAll()">
-                    <i class="fas fa-check-square"></i> Marcar/Desmarcar Todos
-                </button>
-                <span class="search-page-info" id="searchPageInfo" style="display:none;">
-                    <i class="fas fa-layer-group"></i> Lista <b id="searchPageNum">1</b>
-                    · <span id="searchVariantLabel"></span>
-                </span>
-                <button class="m-btn renovar" id="btnRenovar" onclick="renovarLista()" style="margin-left:auto;" disabled>
-                    <i class="fas fa-sync-alt"></i> Renovar Lista
-                </button>
-            </div>
-            <!-- Linha inferior: Cancelar + Adicionar -->
-            <div style="display:flex; gap:8px; margin-left:auto;">
+        <div class="modal-foot">
+            <button class="m-btn sel-all" onclick="toggleSelectAll()"><i class="fas fa-check-square"></i> Marcar/Desmarcar Todos</button>
+            <div style="display:flex;gap:8px;">
                 <button class="m-btn cancel" onclick="closeModal('searchModal')">Cancelar</button>
                 <button class="m-btn confirm" onclick="addSelectedToPlaylist()"><i class="fas fa-plus"></i> Adicionar</button>
             </div>
@@ -1558,6 +1523,46 @@
     </div>
 </div>
 
+<!-- NOVO MODAL: Apoio via PIX (opção 4 – não invasivo) -->
+<div class="modal-wrap" id="supportModal" role="dialog" aria-modal="true" aria-label="Apoiar Pesq Music">
+    <div class="modal-box">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h4><i class="fas fa-heart" style="color:#f093fb"></i> Apoie o Pesq Music</h4>
+            <button class="m-close" onclick="closeModal('supportModal')" aria-label="Fechar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" style="text-align:center;">
+            <p style="font-size:1rem;margin-bottom:20px;">Pesq Music é 100% gratuita e sem anúncios.<br>Feita com ❤️ por Robertson Guimarães.</p>
+            
+            <div style="background:rgba(255,255,255,0.08);padding:20px;border-radius:16px;margin:0 auto 20px;max-width:260px;">
+                <div style="margin-bottom:12px;"><i class="fas fa-qrcode" style="font-size:2.5rem;color:var(--accent-3);"></i></div>
+                <img id="pixQR" src="" alt="QR Code PIX" style="width:100%;max-width:220px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+                <div style="margin-top:16px;">
+                    <strong style="display:block;font-size:0.95rem;color:var(--text-dim);">Chave PIX (e-mail)</strong>
+                    <span id="pixKeyDisplay" style="font-size:1.15rem;font-weight:700;color:#fff;word-break:break-all;">robertguima@gmail.com</span>
+                </div>
+            </div>
+
+            <button onclick="copyPixKey()" class="m-btn confirm" style="width:100%;margin-bottom:16px;">
+                <i class="fas fa-copy"></i> Copiar chave PIX
+            </button>
+
+            <div style="font-size:0.82rem;color:var(--text-dim);margin:16px 0 10px;">Valores sugeridos:</div>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                <button onclick="suggestAmount(5)" class="m-btn cancel" style="padding:8px 16px;font-size:0.85rem;">R$ 5</button>
+                <button onclick="suggestAmount(10)" class="m-btn cancel" style="padding:8px 16px;font-size:0.85rem;">R$ 10</button>
+                <button onclick="suggestAmount(20)" class="m-btn cancel" style="padding:8px 16px;font-size:0.85rem;">R$ 20</button>
+                <button onclick="suggestAmount(50)" class="m-btn cancel" style="padding:8px 16px;font-size:0.85rem;">R$ 50</button>
+            </div>
+
+            <p style="font-size:0.75rem;color:var(--text-ghost);margin-top:24px;">Obrigado por apoiar!<br>Sua contribuição ajuda a manter o app atualizado.</p>
+        </div>
+        <div class="modal-foot">
+            <button class="m-btn cancel" onclick="closeModal('supportModal')">Fechar</button>
+        </div>
+    </div>
+</div>
+
 <!-- ═══════════════ PLAYER (modificado) ══════════════════ -->
 <div class="player-wrap" id="playerWrap" role="dialog" aria-modal="true" aria-label="Reprodutor">
 
@@ -1632,22 +1637,18 @@
     </div>
 </div>
 
-<!-- Dica PiP / Background -->
+<!-- Dica PiP -->
 <div class="pip-note" id="pipNote">
     <i class="fas fa-info-circle"></i>
-    <span>O áudio continua em segundo plano. Para vídeo flutuante, toque em <i class="fas fa-clone"></i> ou use o controle de mídia do sistema.</span>
+    <span>Para continuar assistindo em segundo plano, use o botão <i class="fas fa-clone"></i> Picture-in-Picture.</span>
     <button class="pip-btn" onclick="document.getElementById('pipNote').style.display='none'">Entendi</button>
 </div>
 
 <!-- Toast zone -->
 <div class="toast-zone" id="toastZone" aria-live="polite"></div>
 
-<!-- Silent audio — mantém sessão de áudio ativa em segundo plano (iOS / PWA) -->
-<audio id="silentAudio" loop preload="auto" style="display:none"
-       src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"></audio>
-
 <!-- ══════════════════════════════════════════
-     JAVASCRIPT (código original + melhorias)
+     JAVASCRIPT (código original + apoio PIX)
 ══════════════════════════════════════════ -->
 <script>
 /* ─── CONFIG ─────────────────────────────────── */
@@ -1700,28 +1701,6 @@ let selectedCat = '';   // category selected in custom link modal
 let queue    = [];
 let qIdx     = 0;
 let autoPlay = true;
-
-/* ─── SEARCH PAGINATION STATE ────────────────────
-   Controla a renovação dinâmica da lista de resultados.
-─────────────────────────────────────────────── */
-let searchNextPageToken = null;   // token da próxima página retornado pela API
-let searchPageCount     = 1;      // contador de página exibido ao usuário
-let searchVariantIdx    = 0;      // índice do modificador de query atual
-
-// Modificadores rotativos — cada renovação que esgota as páginas usa um diferente,
-// garantindo variedade quase infinita de resultados para o mesmo gênero.
-const SEARCH_VARIANTS = [
-    { label: 'Músicas',          mod: 'music'           },
-    { label: 'Clipes Oficiais',  mod: 'official video'  },
-    { label: 'Ao Vivo',          mod: 'live performance'},
-    { label: 'Remix',            mod: 'remix'           },
-    { label: 'Acústico',         mod: 'acoustic'        },
-    { label: 'Top Hits',         mod: 'top hits'        },
-    { label: 'Playlist',         mod: 'playlist mix'    },
-    { label: 'Clássicos',        mod: 'classic'         },
-    { label: 'Novidades',        mod: 'new releases 2025'},
-    { label: 'Covers',           mod: 'cover'           },
-];
 
 /* ─── BOOT ───────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -1807,53 +1786,19 @@ function clearCatPick() {
 /* ─── YOUTUBE SEARCH ─────────────────────────── */
 async function searchYT(genre) {
     currentGenre = genre;
-    // Resetar estado de paginação ao abrir uma nova busca de gênero
-    searchNextPageToken = null;
-    searchPageCount     = 1;
-    searchVariantIdx    = 0;
-
     document.getElementById('searchModalTitle').textContent = `${genre} — Selecionar músicas`;
     document.getElementById('searchModalBody').innerHTML =
         `<div class="loading-wrap"><div class="spinner"></div><p>Carregando do YouTube…</p></div>`;
-    _updateSearchPageUI();
     openModal('searchModal');
-    await _fetchSearchPage(genre);
-}
-
-async function renovarLista() {
-    if (!currentGenre) return;
-    document.getElementById('btnRenovar').disabled = true;
-    document.getElementById('searchModalBody').innerHTML =
-        `<div class="loading-wrap"><div class="spinner"></div><p>Buscando novos resultados…</p></div>`;
-    await _fetchSearchPage(currentGenre);
-}
-
-async function _fetchSearchPage(genre) {
-    const variant = SEARCH_VARIANTS[searchVariantIdx % SEARCH_VARIANTS.length];
-    const query   = `${genre} ${variant.mod}`;
-    let   url     = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${YT_KEY}`;
-
-    if (searchNextPageToken) {
-        url += `&pageToken=${encodeURIComponent(searchNextPageToken)}`;
-    }
 
     try {
-        const r = await fetch(url);
+        const r = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(genre + ' music')}&type=video&maxResults=20&key=${YT_KEY}`
+        );
         const d = await r.json();
         if (d.error) throw new Error(d.error.message);
-
-        searchItems         = d.items || [];
-        searchNextPageToken = d.nextPageToken || null;
-
-        // Se não há mais páginas para este modificador, avança para o próximo
-        if (!searchNextPageToken) {
-            searchVariantIdx++;
-        }
-
+        searchItems = d.items || [];
         renderSearchItems(searchItems, genre);
-        _updateSearchPageUI();
-        searchPageCount++;
-
     } catch(e) {
         document.getElementById('searchModalBody').innerHTML = `
             <div class="loading-wrap">
@@ -1861,26 +1806,6 @@ async function _fetchSearchPage(genre) {
                 <p style="color:var(--text-dim);">Erro: ${e.message}</p>
                 <p style="font-size:0.8rem;color:var(--text-ghost);margin-top:6px;">Verifique a chave de API.</p>
             </div>`;
-    }
-
-    document.getElementById('btnRenovar').disabled = false;
-}
-
-function _updateSearchPageUI() {
-    const btn       = document.getElementById('btnRenovar');
-    const info      = document.getElementById('searchPageInfo');
-    const numEl     = document.getElementById('searchPageNum');
-    const varLabel  = document.getElementById('searchVariantLabel');
-    const variant   = SEARCH_VARIANTS[searchVariantIdx % SEARCH_VARIANTS.length];
-
-    btn.disabled = false;
-
-    if (searchPageCount > 1) {
-        info.style.display    = 'flex';
-        numEl.textContent     = searchPageCount;
-        varLabel.textContent  = variant.label;
-    } else {
-        info.style.display    = 'none';
     }
 }
 
@@ -2046,6 +1971,13 @@ function buildPlaylistHTML() {
             <button class="act-btn act-clear" onclick="clearPl()">
                 <i class="fas fa-trash" aria-hidden="true"></i> Limpar
             </button>
+        </div>
+        <!-- Apoio PIX – adicionado de forma discreta (não altera layout existente) -->
+        <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);text-align:center;">
+            <button onclick="openSupportModal()" class="act-btn" 
+                    style="background:linear-gradient(135deg,#f093fb,#f5576c);color:#1a1a2e;width:100%;">
+                <i class="fas fa-heart"></i> Apoiar o Pesq Music com PIX
+            </button>
         </div>`;
 }
 
@@ -2094,27 +2026,33 @@ function shareWA() {
         return l;
     });
 
-    const text    = `🎵 *Minha Playlist — Pesq Music*\n\n${lines.join('\n\n')}`;
-    const encoded = encodeURIComponent(text);
+    const text = `🎵 *Minha Playlist — Pesq Music*\n\n${lines.join('\n\n')}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
 
-    // Android Intent URL — o WebView reconhece este formato nativamente e
-    // encaminha ao sistema Android, que abre o WhatsApp diretamente.
-    // Não requer nenhuma configuração adicional no wrapper (WEB2APP, etc.).
-    const intentUrl = `intent://send?text=${encoded}#Intent;scheme=whatsapp;package=com.whatsapp;end`;
+/* ─── NOVO: APOIO VIA PIX (robertguima@gmail.com) ── */
+function openSupportModal() {
+    openModal('supportModal');
+    const key = 'robertguima@gmail.com';
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(key)}&size=300x300&color=667eea-ffffff`;
+    document.getElementById('pixQR').src = qrUrl;
+    document.getElementById('pixKeyDisplay').textContent = key;
+}
 
-    // Fallback para browser web comum (onde o intent:// não é suportado)
-    const waWeb = `https://wa.me/?text=${encoded}`;
+function copyPixKey() {
+    const key = 'robertguima@gmail.com';
+    navigator.clipboard.writeText(key).then(() => {
+        toast('✅ Chave PIX copiada! Cole no app do seu banco.', 'success');
+    }).catch(() => {
+        toast('Não foi possível copiar automaticamente.', 'warning');
+    });
+}
 
-    // Detecta se está num WebView Android pelo user agent
-    const isAndroidWebView = /Android/.test(navigator.userAgent) &&
-                             (/wv\)/.test(navigator.userAgent) ||
-                              /Version\/\d/.test(navigator.userAgent));
-
-    if (isAndroidWebView) {
-        window.location.href = intentUrl;
-    } else {
-        window.open(waWeb, '_blank');
-    }
+function suggestAmount(amount) {
+    copyPixKey();
+    setTimeout(() => {
+        toast(`💰 PIX copiado! Sugestão: R$ ${amount},00. Obrigado! ❤️`, 'success');
+    }, 400);
 }
 
 /* ─── CUSTOM LINK ────────────────────────────── */
@@ -2160,7 +2098,7 @@ function openWebSearch() {
     document.getElementById('webSearchInput').value = term;
     document.getElementById('webSearchResults').innerHTML = '<div class="loading-wrap"><div class="spinner"></div><p>Buscando…</p></div>';
     openModal('webSearchModal');
-    performWebSearch(true); // já busca ao abrir
+    performWebSearch(true);
 }
 
 async function performWebSearch(keepModalOpen) {
@@ -2212,7 +2150,6 @@ async function selectWebResult(url, title, artist, album) {
         toast('Não foi possível copiar', 'error');
     }
 
-    // Preenche os campos do formulário
     document.getElementById('fUrl').value = url;
     document.getElementById('fTitle').value = decodeHTMLEntities(title);
     document.getElementById('fArtist').value = decodeHTMLEntities(artist);
@@ -2227,138 +2164,18 @@ function decodeHTMLEntities(text) {
     return textarea.value;
 }
 
-/* ─── BACKGROUND AUDIO KEEP-ALIVE ────────────────
-   Mantém a sessão de áudio ativa no iOS/PWA mesmo
-   após o usuário sair do app ou bloquear a tela.
-   Técnica: AudioContext + silent <audio> element.
-─────────────────────────────────────────────── */
-let _audioCtxUnlocked = false;
-let _silentSrc        = null;
-let _wakeLock         = null;
-
-function unlockAudioSession() {
-    if (_audioCtxUnlocked) return;
-    _audioCtxUnlocked = true;
-
-    // 1) Inicia o <audio> silencioso — sinaliza ao iOS que existe sessão de áudio ativa
-    const sil = document.getElementById('silentAudio');
-    if (sil) {
-        sil.volume = 0.001; // quase zero — inaudível
-        sil.play().catch(() => {});
-    }
-
-    // 2) AudioContext para manter o processo de áudio vivo (necesário no iOS Safari / PWA)
-    try {
-        const AC  = window.AudioContext || window.webkitAudioContext;
-        if (AC) {
-            const ctx = new AC();
-            const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); // 1 s de silêncio
-            _silentSrc = ctx.createBufferSource();
-            _silentSrc.buffer = buf;
-            _silentSrc.loop   = true;
-            _silentSrc.connect(ctx.destination);
-            _silentSrc.start(0);
-        }
-    } catch(_) {}
-}
-
-/* ─── MEDIA SESSION API ──────────────────────────
-   Registra metadados e controles de mídia no OS.
-   Permite controlar reprodução pela tela de bloqueio,
-   centro de controle e notificações do Android/iOS.
-─────────────────────────────────────────────── */
-function setupMediaSession(item) {
-    if (!('mediaSession' in navigator)) return;
-
-    // Thumbnail do YouTube como artwork (se disponível)
-    const vid      = item.videoId || extractVid(item.url);
-    const artworks = vid ? [
-        { src: `https://img.youtube.com/vi/${vid}/mqdefault.jpg`, sizes: '320x180', type: 'image/jpeg' },
-        { src: `https://img.youtube.com/vi/${vid}/hqdefault.jpg`,  sizes: '480x360', type: 'image/jpeg' },
-    ] : [];
-
-    navigator.mediaSession.metadata = new MediaMetadata({
-        title:  item.title  || 'Pesq Music',
-        artist: item.artist || 'Pesq Music',
-        album:  item.album  || item.category || '',
-        artwork: artworks,
-    });
-
-    // Action handlers — permitem controle pela tela de bloqueio / controle central
-    const safe = fn => { try { navigator.mediaSession.setActionHandler(...fn); } catch(_) {} };
-    safe(['play',          () => sendYTCommand('playVideo')]);
-    safe(['pause',         () => sendYTCommand('pauseVideo')]);
-    safe(['previoustrack', () => { plPrev(); updateMiniPlayer(); }]);
-    safe(['nexttrack',     () => { plNext(); updateMiniPlayer(); }]);
-    safe(['seekbackward',  () => sendYTCommand('seekTo', -10)]);   // -10 s (best-effort)
-    safe(['seekforward',   () => sendYTCommand('seekTo', +10)]);   // +10 s
-
-    // Declara estado "playing" — mantém o OS ciente de que há reprodução ativa
-    try { navigator.mediaSession.playbackState = 'playing'; } catch(_) {}
-}
-
-/* ─── YOUTUBE POSTMESSAGE HELPER ────────────────── */
-function sendYTCommand(func, arg) {
-    const iframe = document.getElementById('plIframe');
-    if (!iframe || !iframe.contentWindow) return;
-    try {
-        iframe.contentWindow.postMessage(
-            JSON.stringify({ event: 'command', func, args: arg !== undefined ? [arg] : [] }),
-            '*'
-        );
-    } catch(_) {}
-}
-
-/* ─── VISIBILITY CHANGE — RECUPERA REPRODUÇÃO ────
-   Quando o usuário volta ao app após tê-lo minimizado,
-   reenvia o comando "play" ao iframe do YouTube.
-   (O YouTube pausa automaticamente quando a aba fica
-   oculta em alguns browsers/SO — isto reverte.)
-─────────────────────────────────────────────── */
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        // Página ficando oculta: garante que o Media Session está declarado "playing"
-        try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; } catch(_) {}
-    } else {
-        // Página voltando ao foco: re-envia play ao YouTube iframe
-        if (queue.length && qIdx >= 0 && qIdx < queue.length) {
-            setTimeout(() => sendYTCommand('playVideo'), 350);
-        }
-    }
-});
-
-/* ─── SCREEN WAKE LOCK (evita apagar tela durante reprodução) ── */
-async function acquireWakeLock() {
-    if (!('wakeLock' in navigator)) return;
-    try {
-        _wakeLock = await navigator.wakeLock.request('screen');
-        // Re-adquire se o lock for liberado automaticamente (ex: ao voltar ao foco)
-        _wakeLock.addEventListener('release', () => {
-            if (queue.length && !document.hidden) acquireWakeLock();
-        });
-    } catch(_) {}
-}
-
-async function releaseWakeLock() {
-    if (_wakeLock) { try { await _wakeLock.release(); } catch(_) {} _wakeLock = null; }
-}
-
 /* ─── PLAYER ─────────────────────────────────── */
 function embedURL(url, vid) {
     const id = vid || extractVid(url);
 
     if (id) {
-        // YouTube via youtube-nocookie.com — privacy-enhanced mode
-        // &enablejsapi=1 é essencial para postMessage commands funcionarem
         return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&enablejsapi=1&origin=${encodeURIComponent(location.origin || 'https://pesqmusic.app')}`;
     }
 
-    // Spotify
     if (url.includes('open.spotify.com')) {
         return url.replace('open.spotify.com/', 'open.spotify.com/embed/');
     }
 
-    // SoundCloud
     if (url.includes('soundcloud.com')) {
         return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23667eea&auto_play=true&hide_related=true&show_comments=false&visual=true`;
     }
@@ -2405,31 +2222,21 @@ function openPlayer() {
     document.getElementById('playerWrap').classList.add('open');
     document.getElementById('miniPlayer').style.display = 'none';
     loadTrack(qIdx);
-    // Inicia keep-alive de áudio na primeira interação do usuário
-    unlockAudioSession();
-    acquireWakeLock();
 }
 
 function closePlayer() {
     document.getElementById('playerWrap').classList.remove('open');
     document.getElementById('miniPlayer').style.display = 'none';
-    // Reset iframe para blank — para completamente a mídia
     const iframe = document.getElementById('plIframe');
     iframe.src = 'about:blank';
     queue = [];
-    qIdx  = 0;
-    // Libera wake lock e limpa media session
-    releaseWakeLock();
-    try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'; } catch(_) {}
+    qIdx = 0;
 }
 
 function minimizePlayer() {
-    // NOTA: O iframe NÃO é destruído — apenas a UI é ocultada.
-    // O YouTube continua reproduzindo em segundo plano dentro desta aba.
     document.getElementById('playerWrap').classList.remove('open');
     document.getElementById('miniPlayer').style.display = 'flex';
     updateMiniPlayer();
-    // Mostra a dica do PiP
     document.getElementById('pipNote').style.display = 'flex';
     setTimeout(() => {
         document.getElementById('pipNote').style.display = 'none';
@@ -2439,11 +2246,7 @@ function minimizePlayer() {
 function maximizePlayer() {
     document.getElementById('miniPlayer').style.display = 'none';
     document.getElementById('playerWrap').classList.add('open');
-    // Recarrega apenas se não houver mídia ativa (iframe vazio)
-    const iframe = document.getElementById('plIframe');
-    if (!iframe.src || iframe.src === 'about:blank') {
-        if (queue.length > 0) loadTrack(qIdx);
-    }
+    if (queue.length > 0) loadTrack(qIdx);
 }
 
 function updateMiniPlayer() {
@@ -2471,14 +2274,11 @@ function loadTrack(idx) {
     const parts = [item.artist, item.album, item.category].filter(Boolean);
     document.getElementById('plBarMeta').textContent = parts.join(' · ') || 'Pesq Music';
 
-    // Remove any previous no-embed message
     const prevMsg = area.querySelector('.no-embed-msg');
     if (prevMsg) prevMsg.remove();
 
     if (src) {
         document.getElementById('plIframe').src = src;
-        // Registra metadados na Media Session API do OS
-        setupMediaSession(item);
     } else {
         document.getElementById('plIframe').src = 'about:blank';
         area.insertAdjacentHTML('beforeend', `
@@ -2541,54 +2341,27 @@ function scrollToActive() {
     }, 120);
 }
 
-// YouTube postMessage: auto-advance + recuperação de estado
 window.addEventListener('message', e => {
+    if (!autoPlay) return;
     try {
         const d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
-
-        // Vídeo terminou (state=0) → avança automaticamente se autoPlay=true
         if (d?.event === 'onStateChange' && d?.info === 0) {
-            if (autoPlay && qIdx < queue.length - 1) {
-                setTimeout(() => { plNext(); updateMiniPlayer(); }, 1600);
-            }
-        }
-
-        // Player iniciou (state=1 = playing) → atualiza Media Session para "playing"
-        if (d?.event === 'onStateChange' && d?.info === 1) {
-            try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'; } catch(_) {}
-        }
-
-        // Player pausou (state=2) → atualiza Media Session para "paused"
-        if (d?.event === 'onStateChange' && d?.info === 2) {
-            try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'; } catch(_) {}
+            if (qIdx < queue.length - 1) setTimeout(() => { plNext(); updateMiniPlayer(); }, 1600);
         }
     } catch(_) {}
 });
 
 /* ─── PICTURE-IN-PICTURE ─────────────────────── */
 async function requestPictureInPicture() {
-    // Tenta ativar PiP via API nativa no iframe do player
-    const iframe = document.getElementById('plIframe');
-
-    // Chrome Android / Safari iOS 16+: tenta via Document PiP ou elemento de vídeo interno
-    if (document.pictureInPictureEnabled) {
-        // Verifica se há algum elemento <video> na página principal que possamos usar
-        const videos = document.querySelectorAll('video');
-        for (const v of videos) {
-            if (!v.paused) {
-                try { await v.requestPictureInPicture(); return; } catch(_) {}
-            }
-        }
+    if (!document.pictureInPictureEnabled) {
+        toast('Picture-in-Picture não é suportado neste navegador', 'warning');
+        return;
     }
-
-    // Fallback: orienta o usuário — no YouTube, o botão PiP nativo aparece
-    // no canto do vídeo ao interagir com ele, ou nas notificações do sistema
-    toast('Toque no vídeo e selecione o botão ⊡ Picture-in-Picture, ou minimize o navegador — o áudio continuará tocando.', 'info');
-
+    toast('Clique com o botão direito no vídeo e selecione "Picture-in-Picture"', 'info');
     document.getElementById('pipNote').style.display = 'flex';
     setTimeout(() => {
         document.getElementById('pipNote').style.display = 'none';
-    }, 6000);
+    }, 5000);
 }
 
 /* ─── DRAWERS (mobile) ───────────────────────── */
@@ -2601,7 +2374,7 @@ function openDrawer(side) {
     } else {
         document.getElementById('drawerRight').classList.add('open');
         document.getElementById('drawerLeft').classList.remove('open');
-        renderPlaylistPanels(); // refresh mobile panel
+        renderPlaylistPanels();
     }
 }
 
@@ -2636,7 +2409,7 @@ document.querySelectorAll('.modal-wrap').forEach(wrap => {
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         if (document.getElementById('playerWrap').classList.contains('open')) {
-            minimizePlayer(); // minimiza em vez de fechar
+            minimizePlayer();
         } else {
             document.querySelectorAll('.modal-wrap.open').forEach(m => {
                 m.classList.remove('open');
@@ -2664,24 +2437,20 @@ function initSwipeGestures() {
     }, {passive: true});
 
     document.addEventListener('touchend', e => {
-        // Don't trigger if a modal or player is open
         if (document.querySelector('.modal-wrap.open') ||
             document.getElementById('playerWrap').classList.contains('open')) return;
 
         const dx = e.changedTouches[0].clientX - startX;
         const dy = e.changedTouches[0].clientY - startY;
 
-        // Only horizontal swipes (dx > 50, dy < 40)
         if (Math.abs(dx) < 50 || Math.abs(dy) > 40) return;
 
         const leftOpen  = document.getElementById('drawerLeft').classList.contains('open');
         const rightOpen = document.getElementById('drawerRight').classList.contains('open');
 
         if (dx > 0 && startX < 30 && !leftOpen && !rightOpen) {
-            // Swipe right from left edge → open left drawer
             openDrawer('left');
         } else if (dx < 0 && startX > window.innerWidth - 30 && !leftOpen && !rightOpen) {
-            // Swipe left from right edge → open right drawer
             openDrawer('right');
         } else if (dx < 0 && leftOpen) {
             closeDrawers();

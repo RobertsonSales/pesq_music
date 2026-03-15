@@ -488,8 +488,8 @@
         .empty-state i { font-size: 2.4rem; margin-bottom: 8px; opacity: 0.4; display: block; }
         .empty-state p { font-size: 0.85rem; }
 
-        /* Playlist action buttons - original */
-        .pl-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+        /* Playlist action buttons - original (MODIFICADO: removido botão Apoiar PIX) */
+        .pl-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
 
         .act-btn {
             padding: 0 8px;
@@ -516,8 +516,6 @@
         .act-add:hover   { box-shadow: 0 6px 18px rgba(79,172,254,0.4); }
         .act-share { background: linear-gradient(135deg,#25d366,#128c7e); color:#fff; }
         .act-share:hover { box-shadow: 0 6px 18px rgba(37,211,102,0.4); }
-        .act-support { background: linear-gradient(135deg,#f093fb,#f5576c); color:#1a1a2e; }
-        .act-support:hover { box-shadow: 0 6px 18px rgba(245,87,108,0.38); }
         .act-clear { background: var(--bg-glass); color: var(--text-dim); border: 1px solid var(--border); }
         .act-clear:hover { background: rgba(245,87,108,0.7); color:#fff; border-color:transparent; }
 
@@ -1440,7 +1438,7 @@
 
 <!-- ═══════════════ MODAIS ═══════════════════════ -->
 
-<!-- Search results modal (original) -->
+<!-- Search results modal (original) - MODIFICADO: botão Apoiar PIX adicionado -->
 <div class="modal-wrap" id="searchModal" role="dialog" aria-modal="true" aria-labelledby="searchModalTitle">
     <div class="modal-box">
         <div class="modal-handle"></div>
@@ -1454,6 +1452,7 @@
         <div class="modal-foot">
             <button class="m-btn sel-all" onclick="toggleSelectAll()"><i class="fas fa-check-square"></i> Marcar/Desmarcar Todos</button>
             <div style="display:flex;gap:8px;">
+                <button class="m-btn confirm" onclick="openSupportModal()" style="background:linear-gradient(135deg,#f093fb,#f5576c); color:#1a1a2e;"><i class="fas fa-heart"></i> Apoiar PIX</button>
                 <button class="m-btn cancel" onclick="closeModal('searchModal')">Cancelar</button>
                 <button class="m-btn confirm" onclick="addSelectedToPlaylist()"><i class="fas fa-plus"></i> Adicionar</button>
             </div>
@@ -1913,7 +1912,7 @@ function addSelectedToPlaylist() {
     }
 }
 
-/* ─── PLAYLIST PANEL BUILDER ─────────────────── */
+/* ─── PLAYLIST PANEL BUILDER - MODIFICADO: botão Apoiar PIX removido ── */
 function renderPlaylistPanels() {
     const html = buildPlaylistHTML();
     document.getElementById('playlistPanelDesktop').innerHTML = html;
@@ -1988,9 +1987,6 @@ function buildPlaylistHTML() {
             </button>
             <button class="act-btn act-add"   onclick="openCustomModal()">
                 <i class="fas fa-plus" aria-hidden="true"></i> Adicionar
-            </button>
-            <button class="act-btn act-support" onclick="openSupportModal()">
-                <i class="fas fa-heart" aria-hidden="true"></i> Apoiar PIX
             </button>
             <button class="act-btn act-share" onclick="shareWA()">
                 <i class="fab fa-whatsapp" aria-hidden="true"></i> Compartilhar
@@ -2507,7 +2503,7 @@ function toast(msg, type = 'info') {
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
         self.addEventListener('install', e => self.skipWaiting());
-        self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+        self.addEventListener('activate', e => e.waitUntil(clients.claim());
     `)).catch(console.error);
 }
 </script>

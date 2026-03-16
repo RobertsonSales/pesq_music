@@ -810,6 +810,54 @@
         .m-btn.sel-all { background: var(--bg-glass); color: var(--text-dim); border: 1px solid var(--border); font-size: 0.78rem; padding: 0 13px; }
         .m-btn.sel-all:active { color: var(--text); }
 
+        /* Duration badge on media items */
+        .m-duration {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(0,0,0,0.55);
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 6px;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .m-duration.long  { background: linear-gradient(135deg, rgba(79,172,254,0.5), rgba(0,242,254,0.35)); }
+        .m-duration.short { background: rgba(255,255,255,0.12); }
+
+        /* "Próxima Lista" button row */
+        .next-list-row {
+            display: flex;
+            justify-content: center;
+            padding: 14px 0 4px;
+        }
+
+        .next-list-btn {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            border: none;
+            border-radius: var(--radius-sm);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 0 22px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.22s;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 4px 14px rgba(102,126,234,0.35);
+        }
+
+        .next-list-btn:hover  { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(102,126,234,0.5); }
+        .next-list-btn:active { transform: translateY(0); }
+        .next-list-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
         /* Loading spinner - original */
         .loading-wrap { text-align: center; padding: 44px 20px; color: var(--text-dim); }
 
@@ -1796,6 +1844,12 @@ let searchItems = [];
 let currentGenre = '';
 let selectedCat = '';   // category selected in custom link modal
 
+// Pagination state (Próxima Lista)
+let searchNextPageToken = '';   // YouTube nextPageToken
+let searchIsFilm        = false;
+let searchCurrentQ      = '';
+let searchDurations     = {};   // videoId → formatted duration string
+
 // Player state
 let queue    = [];
 let qIdx     = 0;
@@ -1934,77 +1988,201 @@ function clearCatPick() {
 /* ─── YOUTUBE SEARCH ─────────────────────────── */
 async function searchYT(genre) {
     currentGenre = genre;
-    const genreObj  = GENRES.find(g => g.name === genre);
-    const isFilm    = genreObj && genreObj.type === 'film';
-    const searchQ   = isFilm ? `${genre} filmes trailer série` : `${genre} music`;
-    const modalTitle = isFilm ? `${genre} — Selecionar Conteúdo` : `${genre} — Selecionar músicas`;
+    const genreObj = GENRES.find(g => g.name === genre);
+    searchIsFilm   = !!(genreObj && genreObj.type === 'film');
+    searchNextPageToken = '';
+    searchDurations     = {};
+
+    // Film search: target full movies/episodes (long videos)
+    if (searchIsFilm) {
+        searchCurrentQ = `${genre} filme completo dublado legendado`;
+    } else {
+        searchCurrentQ = `${genre} music`;
+    }
+
+    const modalTitle = searchIsFilm
+        ? `${genre} — Filmes & Séries`
+        : `${genre} — Selecionar músicas`;
 
     document.getElementById('searchModalTitle').textContent = modalTitle;
     document.getElementById('searchModalBody').innerHTML =
         `<div class="loading-wrap"><div class="spinner"></div><p>Carregando do YouTube…</p></div>`;
     openModal('searchModal');
 
+    await _fetchSearchPage(true);
+}
+
+async function _fetchSearchPage(replace) {
+    const body = document.getElementById('searchModalBody');
+    if (!replace) {
+        const existingBtn = body.querySelector('.next-list-row');
+        if (existingBtn) existingBtn.remove();
+        const loadRow = document.createElement('div');
+        loadRow.className = 'loading-wrap';
+        loadRow.id = 'searchLoadMore';
+        loadRow.innerHTML = '<div class="spinner"></div><p>Carregando próxima lista…</p>';
+        body.appendChild(loadRow);
+    }
+
     try {
-        const r = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQ)}&type=video&maxResults=20&key=${YT_KEY}`
-        );
+        // Build search URL — for films request only long-duration videos
+        let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchCurrentQ)}&type=video&maxResults=20&key=${YT_KEY}`;
+        if (searchIsFilm)          url += `&videoDuration=long`;
+        if (searchNextPageToken)   url += `&pageToken=${encodeURIComponent(searchNextPageToken)}`;
+
+        const r = await fetch(url);
         const d = await r.json();
         if (d.error) throw new Error(d.error.message);
-        searchItems = d.items || [];
-        renderSearchItems(searchItems, genre, isFilm);
+
+        const items = d.items || [];
+        searchNextPageToken = d.nextPageToken || '';
+
+        if (replace) {
+            searchItems = items;
+        } else {
+            searchItems = [...searchItems, ...items];
+        }
+
+        // For films: fetch content details (duration) for the new batch
+        if (searchIsFilm && items.length) {
+            const ids = items.map(it => it.id.videoId).filter(Boolean).join(',');
+            try {
+                const dr = await fetch(
+                    `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${YT_KEY}`
+                );
+                const dd = await dr.json();
+                (dd.items || []).forEach(v => {
+                    searchDurations[v.id] = _parseDuration(v.contentDetails?.duration || '');
+                });
+            } catch(_) {}
+        }
+
+        if (!replace) {
+            const loadRow = document.getElementById('searchLoadMore');
+            if (loadRow) loadRow.remove();
+        }
+
+        renderSearchItems(items, currentGenre, searchIsFilm, !replace);
+
     } catch(e) {
-        document.getElementById('searchModalBody').innerHTML = `
-            <div class="loading-wrap">
-                <i class="fas fa-exclamation-triangle" style="font-size:2.5rem;color:var(--red);margin-bottom:12px;display:block;"></i>
-                <p style="color:var(--text-dim);">Erro: ${e.message}</p>
-                <p style="font-size:0.8rem;color:var(--text-ghost);margin-top:6px;">Verifique a chave de API.</p>
-            </div>`;
+        const loadRow = document.getElementById('searchLoadMore');
+        if (loadRow) loadRow.remove();
+        if (replace) {
+            document.getElementById('searchModalBody').innerHTML = `
+                <div class="loading-wrap">
+                    <i class="fas fa-exclamation-triangle" style="font-size:2.5rem;color:var(--red);margin-bottom:12px;display:block;"></i>
+                    <p style="color:var(--text-dim);">Erro: ${e.message}</p>
+                    <p style="font-size:0.8rem;color:var(--text-ghost);margin-top:6px;">Verifique a chave de API.</p>
+                </div>`;
+        } else {
+            toast('Erro ao carregar próxima lista: ' + e.message, 'error');
+        }
     }
 }
 
-function renderSearchItems(items, genre, isFilm) {
-    if (!items.length) {
-        document.getElementById('searchModalBody').innerHTML =
+/* Converts ISO 8601 duration (PT1H23M45S) → "1h 23m 45s" */
+function _parseDuration(iso) {
+    if (!iso) return '';
+    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!m) return '';
+    const h = parseInt(m[1] || 0);
+    const min = parseInt(m[2] || 0);
+    const sec = parseInt(m[3] || 0);
+    if (h)   return `${h}h ${min}m`;
+    if (min) return `${min}m ${sec < 10 ? '0'+sec : sec}s`;
+    return `${sec}s`;
+}
+
+function loadNextList() {
+    if (!searchNextPageToken) { toast('Sem mais resultados', 'info'); return; }
+    _fetchSearchPage(false);
+}
+
+function renderSearchItems(items, genre, isFilm, append) {
+    const body = document.getElementById('searchModalBody');
+
+    if (!append && !items.length) {
+        body.innerHTML =
             `<div class="loading-wrap"><i class="fas fa-inbox" style="font-size:2.5rem;opacity:0.4;display:block;margin-bottom:10px;"></i><p>Sem resultados.</p></div>`;
         return;
     }
 
-    document.getElementById('searchModalBody').innerHTML =
-        `<ul class="media-list">${items.map((item, i) => {
-            const vid   = item.id.videoId;
-            const title = item.snippet.title;
-            const ch    = item.snippet.channelTitle;
-            const yr    = (item.snippet.publishedAt || '').substring(0,4);
-            const thumb = item.snippet.thumbnails?.default?.url || '';
-            const url   = `https://www.youtube.com/watch?v=${vid}`;
-            const icon  = isFilm
-                ? `<i class="fas fa-film" style="color:var(--accent-3);" aria-hidden="true"></i>`
-                : `<i class="fab fa-youtube" style="color:#ff0000;" aria-hidden="true"></i>`;
-            return `
-            <li class="media-item">
-                <input type="checkbox" class="m-check" id="mi${i}"
-                       value="${url}"
-                       data-vid="${vid}"
-                       data-title="${ea(title)}"
-                       data-artist="${ea(ch)}"
-                       data-album="${ea(yr ? (isFilm ? yr : 'YouTube ' + yr) : (isFilm ? '' : 'YouTube'))}"
-                       data-cat="${ea(genre)}"
-                       checked>
-                <img class="m-thumb" src="${thumb}" alt="Thumbnail: ${ea(title)}"
-                     loading="lazy"
-                     onclick="playDirect('${url}','${ea(title)}','${ea(ch)}','')"
-                     title="Pré-visualizar">
-                <div class="m-info">
-                    <label for="mi${i}">
-                        <span class="m-title">${title}</span>
-                    </label>
-                    <div class="m-meta">
-                        ${icon}
-                        ${ch}${yr ? ' · ' + yr : ''}
-                    </div>
+    if (!append) body.innerHTML = '';
+
+    // Offset index so IDs stay unique across pages
+    const offset = body.querySelectorAll('.m-check').length;
+
+    const list = document.createElement('ul');
+    list.className = 'media-list';
+
+    items.forEach((item, i) => {
+        const idx   = offset + i;
+        const vid   = item.id?.videoId || '';
+        const title = item.snippet?.title || '—';
+        const ch    = item.snippet?.channelTitle || '';
+        const yr    = (item.snippet?.publishedAt || '').substring(0, 4);
+        const thumb = item.snippet?.thumbnails?.default?.url || '';
+        const url   = `https://www.youtube.com/watch?v=${vid}`;
+        const dur   = searchDurations[vid] || '';
+
+        const icon = isFilm
+            ? `<i class="fas fa-film" style="color:var(--accent-3);" aria-hidden="true"></i>`
+            : `<i class="fab fa-youtube" style="color:#ff0000;" aria-hidden="true"></i>`;
+
+        const durBadge = dur
+            ? `<span class="m-duration ${isFilm ? 'long' : 'short'}">
+                   <i class="fas fa-clock" aria-hidden="true"></i> ${dur}
+               </span>`
+            : '';
+
+        const albumVal = yr ? (isFilm ? yr : 'YouTube ' + yr) : (isFilm ? '' : 'YouTube');
+
+        const li = document.createElement('li');
+        li.className = 'media-item';
+        li.innerHTML = `
+            <input type="checkbox" class="m-check" id="mi${idx}"
+                   value="${url}"
+                   data-vid="${vid}"
+                   data-title="${ea(title)}"
+                   data-artist="${ea(ch)}"
+                   data-album="${ea(albumVal)}"
+                   data-cat="${ea(genre)}"
+                   ${isFilm && dur ? `data-duration="${ea(dur)}"` : ''}
+                   checked>
+            <img class="m-thumb" src="${thumb}" alt="Thumbnail: ${ea(title)}"
+                 loading="lazy"
+                 onclick="playDirect('${url}','${ea(title)}','${ea(ch)}','')"
+                 title="Pré-visualizar">
+            <div class="m-info">
+                <label for="mi${idx}">
+                    <span class="m-title">${title}</span>
+                </label>
+                <div class="m-meta" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+                    <span>${icon} ${ch}${yr ? ' · ' + yr : ''}</span>
+                    ${durBadge}
                 </div>
-            </li>`;
-        }).join('')}</ul>`;
+            </div>`;
+        list.appendChild(li);
+    });
+
+    body.appendChild(list);
+
+    // "Próxima Lista" button — always rendered; disabled when no more pages
+    const nextRow = document.createElement('div');
+    nextRow.className = 'next-list-row';
+    if (searchNextPageToken) {
+        nextRow.innerHTML = `
+            <button class="next-list-btn" onclick="loadNextList()">
+                <i class="fas fa-list"></i> Próxima Lista
+                <i class="fas fa-chevron-right"></i>
+            </button>`;
+    } else {
+        nextRow.innerHTML = `
+            <button class="next-list-btn" disabled>
+                <i class="fas fa-check-circle"></i> Fim dos resultados
+            </button>`;
+    }
+    body.appendChild(nextRow);
 }
 
 function toggleSelectAll() {
@@ -2025,11 +2203,12 @@ function addSelectedToPlaylist() {
         playlist.push({
             id:       Date.now() + Math.random(),
             url:      cb.value,
-            title:    cb.dataset.title  || cb.value,
-            artist:   cb.dataset.artist || '',
-            album:    cb.dataset.album  || '',
-            category: cb.dataset.cat   || '',
-            videoId:  cb.dataset.vid   || '',
+            title:    cb.dataset.title    || cb.value,
+            artist:   cb.dataset.artist   || '',
+            album:    cb.dataset.album    || '',
+            category: cb.dataset.cat      || '',
+            videoId:  cb.dataset.vid      || '',
+            duration: cb.dataset.duration || '',
             checked:  true,
         });
         added++;
@@ -2099,6 +2278,7 @@ function buildPlaylistHTML() {
                     <div class="pl-meta">
                         ${item.artist ? `<i class="fas fa-user" style="font-size:0.6rem;opacity:0.6;" aria-hidden="true"></i> ${item.artist}` : ''}
                         ${item.album  ? ` · ${item.album}`  : ''}
+                        ${item.duration ? ` <span class="m-duration long" style="font-size:0.62rem;padding:1px 5px;"><i class="fas fa-clock"></i> ${item.duration}</span>` : ''}
                     </div>
                     ${item.category ? (() => {
                         const isFilm = GENRES.find(g => g.name === item.category && g.type === 'film');
@@ -2250,53 +2430,99 @@ function addCustomLink() {
 }
 
 /* ─── NOVAS FUNÇÕES: PESQUISA WEB ────────────── */
+let webSearchNextToken = '';
+
 function openWebSearch() {
     const term = document.getElementById('webSearchTerm').value.trim();
     if (!term) { toast('Digite um termo para buscar', 'warning'); return; }
     document.getElementById('webSearchInput').value = term;
     document.getElementById('webSearchResults').innerHTML = '<div class="loading-wrap"><div class="spinner"></div><p>Buscando…</p></div>';
+    webSearchNextToken = '';
     openModal('webSearchModal');
-    performWebSearch(true);
+    performWebSearch(false);
 }
 
-async function performWebSearch(keepModalOpen) {
+async function performWebSearch(append) {
     const term = document.getElementById('webSearchInput').value.trim();
     if (!term) { toast('Digite um termo', 'warning'); return; }
 
     const resultsDiv = document.getElementById('webSearchResults');
-    resultsDiv.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><p>Carregando…</p></div>';
+    if (!append) {
+        resultsDiv.innerHTML = '<div class="loading-wrap"><div class="spinner"></div><p>Carregando…</p></div>';
+        webSearchNextToken = '';
+    } else {
+        const oldBtn = resultsDiv.querySelector('.next-list-row');
+        if (oldBtn) oldBtn.remove();
+        const loadRow = document.createElement('div');
+        loadRow.className = 'loading-wrap';
+        loadRow.style.padding = '12px';
+        loadRow.innerHTML = '<div class="spinner"></div>';
+        resultsDiv.appendChild(loadRow);
+    }
 
     try {
-        const r = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(term)}&type=video&maxResults=20&key=${YT_KEY}`
-        );
+        let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(term)}&type=video&maxResults=20&key=${YT_KEY}`;
+        if (webSearchNextToken) url += `&pageToken=${encodeURIComponent(webSearchNextToken)}`;
+
+        const r = await fetch(url);
         const d = await r.json();
         if (d.error) throw new Error(d.error.message);
+
+        webSearchNextToken = d.nextPageToken || '';
         const items = d.items || [];
-        if (!items.length) {
+
+        if (!append) resultsDiv.innerHTML = '';
+        else { const tmp = resultsDiv.querySelector('.loading-wrap'); if (tmp) tmp.remove(); }
+
+        if (!items.length && !append) {
             resultsDiv.innerHTML = '<div class="loading-wrap"><i class="fas fa-inbox" style="font-size:2.5rem;opacity:0.4;"></i><p>Nenhum resultado.</p></div>';
             return;
         }
 
-        resultsDiv.innerHTML = `<ul class="media-list">${items.map((item, i) => {
-            const vid   = item.id.videoId;
-            const title = item.snippet.title;
-            const ch    = item.snippet.channelTitle;
-            const yr    = (item.snippet.publishedAt || '').substring(0,4);
-            const thumb = item.snippet.thumbnails?.default?.url || '';
-            const url   = `https://www.youtube.com/watch?v=${vid}`;
-            return `
-            <li class="media-item" style="cursor:pointer;" onclick="selectWebResult('${url}', '${ea(title)}', '${ea(ch)}', '${ea('YouTube ' + yr)}')">
+        const list = document.createElement('ul');
+        list.className = 'media-list';
+        items.forEach(item => {
+            const vid   = item.id?.videoId || '';
+            const title = item.snippet?.title || '—';
+            const ch    = item.snippet?.channelTitle || '';
+            const yr    = (item.snippet?.publishedAt || '').substring(0,4);
+            const thumb = item.snippet?.thumbnails?.default?.url || '';
+            const url2  = `https://www.youtube.com/watch?v=${vid}`;
+            const li    = document.createElement('li');
+            li.className = 'media-item';
+            li.style.cursor = 'pointer';
+            li.setAttribute('onclick', `selectWebResult('${url2}','${ea(title)}','${ea(ch)}','${ea('YouTube ' + yr)}')`);
+            li.innerHTML = `
                 <img class="m-thumb" src="${thumb}" alt="" loading="lazy">
                 <div class="m-info">
                     <span class="m-title">${title}</span>
                     <div class="m-meta">${ch} · ${yr}</div>
                 </div>
-                <i class="fas fa-copy" style="color:var(--accent-3); margin-left:8px;" title="Copiar link"></i>
-            </li>`;
-        }).join('')}</ul>`;
+                <i class="fas fa-copy" style="color:var(--accent-3); margin-left:8px;" title="Copiar link"></i>`;
+            list.appendChild(li);
+        });
+        resultsDiv.appendChild(list);
+
+        // "Próxima Lista" button
+        const nextRow = document.createElement('div');
+        nextRow.className = 'next-list-row';
+        if (webSearchNextToken) {
+            nextRow.innerHTML = `<button class="next-list-btn" onclick="performWebSearch(true)">
+                <i class="fas fa-list"></i> Próxima Lista <i class="fas fa-chevron-right"></i>
+            </button>`;
+        } else {
+            nextRow.innerHTML = `<button class="next-list-btn" disabled>
+                <i class="fas fa-check-circle"></i> Fim dos resultados
+            </button>`;
+        }
+        resultsDiv.appendChild(nextRow);
+
     } catch(e) {
-        resultsDiv.innerHTML = `<div class="loading-wrap"><i class="fas fa-exclamation-triangle" style="color:var(--red);"></i><p>Erro: ${e.message}</p></div>`;
+        if (!append) resultsDiv.innerHTML = '';
+        const errDiv = document.createElement('div');
+        errDiv.className = 'loading-wrap';
+        errDiv.innerHTML = `<i class="fas fa-exclamation-triangle" style="color:var(--red);"></i><p>Erro: ${e.message}</p>`;
+        resultsDiv.appendChild(errDiv);
     }
 }
 

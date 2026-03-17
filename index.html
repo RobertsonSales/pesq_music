@@ -1481,6 +1481,9 @@
     <button class="nav-btn nav-support-btn" onclick="openSupportModal()" aria-label="Apoiar via PIX">
         <i class="fas fa-heart"></i><span>Apoiar via PIX</span>
     </button>
+    <button class="nav-btn" onclick="openTutorial()" aria-label="Sobre / Tutorial" style="background:linear-gradient(135deg,rgba(102,126,234,0.35),rgba(118,75,162,0.35));border-color:rgba(102,126,234,0.5);">
+        <i class="fas fa-circle-question"></i><span>Sobre</span>
+    </button>
     <button class="nav-btn" onclick="openDrawer('right')" aria-label="Playlist">
         <i class="fas fa-list-music"></i>
         <span class="badge" id="navBadge">0</span>
@@ -1514,6 +1517,12 @@
     <aside class="sidebar">
         <div class="sidebar-title"><i class="fas fa-filter"></i> Categorias</div>
         <div id="catBtnsDesktop"></div>
+        <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
+            <button class="cat-btn" onclick="openTutorial()" aria-label="Sobre / Tutorial"
+                style="color:#a8edea;border-color:rgba(168,237,234,0.25);background:rgba(168,237,234,0.07);">
+                <i class="fas fa-circle-question"></i> Sobre / Tutorial
+            </button>
+        </div>
     </aside>
 
     <!-- Main -->
@@ -1536,6 +1545,10 @@
     <button class="bn-item active" onclick="openDrawer('left')" aria-label="Gêneros">
         <i class="fas fa-th-large"></i>
         <span>Gêneros</span>
+    </button>
+    <button class="bn-item" onclick="openTutorial()" aria-label="Sobre">
+        <i class="fas fa-circle-question"></i>
+        <span>Sobre</span>
     </button>
     <button class="bn-item" onclick="openDrawer('right')" aria-label="Playlist">
         <i class="fas fa-list-music"></i>
@@ -1773,6 +1786,851 @@
     <span>Para continuar assistindo em segundo plano, use o botão <i class="fas fa-clone"></i> Picture-in-Picture.</span>
     <button class="pip-btn" onclick="document.getElementById('pipNote').style.display='none'">Entendi</button>
 </div>
+
+<!-- ═══════════════ TUTORIAL MODAL ══════════════════════ -->
+<style>
+/* ── Tutorial overlay ── */
+.tut-wrap {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5,5,18,0.92);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    z-index: 1100;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.tut-wrap.open { display: flex; }
+
+/* ── Modal box ── */
+.tut-box {
+    background: linear-gradient(160deg, #0f0f28 0%, #12122a 100%);
+    border: 1px solid rgba(102,126,234,0.35);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+    position: relative;
+}
+
+/* ── Header ── */
+.tut-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+}
+.tut-head-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+}
+.tut-head h3 {
+    flex: 1;
+    font-size: 1.05rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, #a8edea 50%, #fed6e3 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.tut-slide-lbl {
+    font-size: 0.72rem;
+    color: var(--text-ghost);
+    font-weight: 600;
+    white-space: nowrap;
+}
+.tut-close {
+    background: rgba(255,255,255,0.07);
+    border: none;
+    border-radius: 8px;
+    color: var(--text-dim);
+    width: 32px; height: 32px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    transition: background 0.18s, color 0.18s;
+    flex-shrink: 0;
+}
+.tut-close:hover { background: rgba(245,87,108,0.35); color: #fff; }
+
+/* ── Progress bar ── */
+.tut-progress {
+    height: 3px;
+    background: rgba(255,255,255,0.07);
+    flex-shrink: 0;
+}
+.tut-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-4));
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    border-radius: 2px;
+}
+
+/* ── Slide viewport ── */
+.tut-viewport {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    min-height: 0;
+}
+.tut-slides {
+    display: flex;
+    height: 100%;
+    transition: transform 0.45s cubic-bezier(0.4,0,0.2,1);
+}
+.tut-slide {
+    min-width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 24px 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    -webkit-overflow-scrolling: touch;
+}
+.tut-slide::-webkit-scrollbar { width: 3px; }
+.tut-slide::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+/* ── Slide text ── */
+.tut-slide-title {
+    font-size: clamp(1.1rem, 3vw, 1.4rem);
+    font-weight: 900;
+    line-height: 1.25;
+}
+.tut-slide-desc {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+}
+.tut-slide-desc strong { color: #a8edea; font-weight: 700; }
+.tut-slide-desc em { color: #fed6e3; font-style: normal; font-weight: 600; }
+
+/* ── Tips list ── */
+.tut-tips {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.tut-tips li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 0.87rem;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.tut-tips li i {
+    width: 18px; text-align: center;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+.tut-tips li span strong { color: var(--text); }
+
+/* ── Demo area ── */
+.tut-demo {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 18px;
+    flex-shrink: 0;
+}
+
+/* ──────────────────────────────────────────
+   SLIDE 1 — Boas-vindas: logo animado
+────────────────────────────────────────── */
+.tut-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+}
+.tut-hero-icon {
+    font-size: 3.5rem;
+    animation: tutBounce 2s ease-in-out infinite;
+}
+@keyframes tutBounce {
+    0%,100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-10px) scale(1.08); }
+}
+.tut-hero-title {
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    font-weight: 900;
+    text-align: center;
+    background: linear-gradient(135deg, #fff 0%, #a8edea 45%, #fed6e3 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.2;
+}
+.tut-hero-sub {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    text-align: center;
+    max-width: 380px;
+    line-height: 1.55;
+}
+.tut-feat-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 6px;
+}
+.tut-pill {
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+    animation: tutFadeUp 0.5s ease both;
+}
+.tut-pill:nth-child(1) { animation-delay: 0.1s; background: rgba(102,126,234,0.2); border-color: rgba(102,126,234,0.4); color: #a8b8ff; }
+.tut-pill:nth-child(2) { animation-delay: 0.2s; background: rgba(79,172,254,0.2); border-color: rgba(79,172,254,0.4); color: #a8edea; }
+.tut-pill:nth-child(3) { animation-delay: 0.3s; background: rgba(240,147,251,0.2); border-color: rgba(240,147,251,0.4); color: #f5b8ff; }
+.tut-pill:nth-child(4) { animation-delay: 0.4s; background: rgba(37,211,102,0.2); border-color: rgba(37,211,102,0.4); color: #7fffb5; }
+.tut-pill:nth-child(5) { animation-delay: 0.5s; background: rgba(255,210,0,0.2); border-color: rgba(255,210,0,0.4); color: #ffe57a; }
+@keyframes tutFadeUp {
+    from { opacity:0; transform: translateY(12px); }
+    to   { opacity:1; transform: translateY(0); }
+}
+
+/* ──────────────────────────────────────────
+   SLIDE 2 — Gêneros: genre grid animado
+────────────────────────────────────────── */
+.tut-genre-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+.tut-genre-card {
+    border-radius: 12px;
+    padding: 14px 6px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: default;
+    animation: tutFadeUp 0.4s ease both;
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+.tut-genre-card:hover { transform: translateY(-5px) scale(1.06); box-shadow: 0 12px 28px rgba(0,0,0,0.5); }
+.tut-genre-card i  { font-size: 1.5rem; }
+.tut-genre-card span { font-size: 0.7rem; font-weight: 700; text-align: center; }
+.tut-genre-card:nth-child(1) { animation-delay:0.05s; background:linear-gradient(135deg,#ff6b6b,#ee5a24); }
+.tut-genre-card:nth-child(2) { animation-delay:0.10s; background:linear-gradient(135deg,#feca57,#ff9ff3); color:#333; }
+.tut-genre-card:nth-child(3) { animation-delay:0.15s; background:linear-gradient(135deg,#48dbfb,#0abde3); }
+.tut-genre-card:nth-child(4) { animation-delay:0.20s; background:linear-gradient(135deg,#a29bfe,#6c5ce7); }
+.tut-genre-card:nth-child(5) { animation-delay:0.25s; background:linear-gradient(135deg,#55efc4,#00b894); color:#333; }
+.tut-genre-card:nth-child(6) { animation-delay:0.30s; background:linear-gradient(135deg,#fd79a8,#e84393); }
+.tut-genre-card:nth-child(7) { animation-delay:0.35s; background:linear-gradient(135deg,#fdcb6e,#e17055); color:#333; }
+.tut-genre-card:nth-child(8) { animation-delay:0.40s; background:linear-gradient(135deg,#74b9ff,#0984e3); }
+
+.tut-click-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: var(--accent-3);
+    background: rgba(79,172,254,0.1);
+    border: 1px solid rgba(79,172,254,0.25);
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+.tut-cursor {
+    animation: tutCursorBlink 1.2s ease-in-out infinite;
+    font-size: 1.1rem;
+}
+@keyframes tutCursorBlink {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:0.4; transform:scale(0.85); }
+}
+
+/* ──────────────────────────────────────────
+   SLIDE 3 — Resultados: mock search list
+────────────────────────────────────────── */
+.tut-result-list { display: flex; flex-direction: column; gap: 7px; }
+.tut-result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 9px 11px;
+    animation: tutFadeUp 0.35s ease both;
+}
+.tut-result-item:nth-child(1){ animation-delay:0.05s; }
+.tut-result-item:nth-child(2){ animation-delay:0.15s; }
+.tut-result-item:nth-child(3){ animation-delay:0.25s; }
+.tut-result-thumb {
+    width: 44px; height: 32px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+}
+.tut-result-info { flex: 1; min-width: 0; }
+.tut-result-title { font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tut-result-sub   { font-size: 0.68rem; color: var(--text-dim); }
+.tut-check-mock {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem;
+    transition: all 0.2s;
+}
+.tut-check-mock.checked {
+    background: var(--accent-1);
+    border-color: var(--accent-1);
+    animation: tutCheckPop 0.3s ease;
+}
+@keyframes tutCheckPop {
+    0%   { transform: scale(0.7); }
+    60%  { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
+
+/* ──────────────────────────────────────────
+   SLIDE 4 — Playlist: mock panel
+────────────────────────────────────────── */
+.tut-playlist-mock {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    overflow: hidden;
+}
+.tut-pl-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.03);
+}
+.tut-pl-header span { font-size: 0.9rem; font-weight: 800; color: #fed6e3; flex:1; }
+.tut-pl-badge { background: linear-gradient(135deg,#f093fb,#f5576c); border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }
+.tut-pl-items { padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.tut-pl-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    animation: tutFadeUp 0.35s ease both;
+}
+.tut-pl-item:nth-child(1){ animation-delay:0.0s; }
+.tut-pl-item:nth-child(2){ animation-delay:0.1s; }
+.tut-pl-item:nth-child(3){ animation-delay:0.2s; background:rgba(102,126,234,0.18); border:1px solid rgba(102,126,234,0.3); }
+.tut-pl-num { width:20px; color:var(--text-ghost); font-size:0.7rem; text-align:center; }
+.tut-pl-name { flex:1; }
+.tut-pl-playing { color:var(--accent-3); font-size:0.75rem; display:flex; align-items:center; gap:4px; }
+.tut-pl-actions-row {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 6px;
+    padding: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.tut-act {
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    cursor: default;
+}
+.tut-act.play  { background: linear-gradient(135deg,#f7971e,#ffd200); color:#1a1a2e; }
+.tut-act.add   { background: linear-gradient(135deg,#4facfe,#00f2fe); color:#fff; }
+.tut-act.share { background: linear-gradient(135deg,#25d366,#128c7e); color:#fff; }
+.tut-act.clear { background: rgba(255,255,255,0.08); color:var(--text-dim); }
+
+/* ──────────────────────────────────────────
+   SLIDE 5 — Player: mock player
+────────────────────────────────────────── */
+.tut-player-mock {
+    background: linear-gradient(160deg,#0a0a1e,#111130);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    overflow: hidden;
+}
+.tut-pl-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.tut-pl-bar-info { flex:1; }
+.tut-pl-dot { width:8px; height:8px; background:var(--red); border-radius:50%; display:inline-block; margin-right:5px; animation:tutPulse 1.2s ease infinite; }
+@keyframes tutPulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+.tut-pl-label { font-size:0.68rem; color:var(--text-ghost); }
+.tut-pl-title { font-size:0.88rem; font-weight:700; }
+.tut-pl-artist{ font-size:0.72rem; color:var(--text-dim); }
+.tut-video-placeholder {
+    height: 120px;
+    background: linear-gradient(135deg,#1a1a3a,#12122a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+}
+.tut-play-icon {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    animation: tutPulse 2s ease infinite;
+}
+.tut-pl-ctrl {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+}
+.tut-ctrl-btn {
+    flex:1; height: 36px;
+    border: none; border-radius: 8px;
+    font-size: 0.72rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    cursor: default;
+}
+.tut-ctrl-btn.prev  { background: rgba(255,255,255,0.08); color:var(--text-dim); }
+.tut-ctrl-btn.auto  { background: rgba(102,126,234,0.3); color:#a8b8ff; }
+.tut-ctrl-btn.next  { background: rgba(255,255,255,0.08); color:var(--text-dim); }
+.tut-dots-row {
+    display: flex;
+    gap: 6px;
+    padding: 8px 14px 4px;
+    justify-content: center;
+}
+.tut-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+}
+.tut-dot.now { background: var(--accent-3); width:22px; border-radius:4px; }
+
+/* ──────────────────────────────────────────
+   SLIDE 6 — Pesquisa livre: mock search
+────────────────────────────────────────── */
+.tut-search-mock {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.tut-search-bar {
+    display: flex;
+    gap: 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 10px 14px;
+    align-items: center;
+}
+.tut-search-bar input {
+    flex:1; background:none; border:none; outline:none;
+    color: var(--text); font-size: 0.88rem;
+    caret-color: var(--accent-3);
+}
+.tut-search-bar button {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    border: none; border-radius: 8px;
+    padding: 6px 14px;
+    color: #fff; font-size: 0.8rem; font-weight: 700; cursor: default;
+}
+.tut-typing-cursor {
+    display: inline-block;
+    width: 2px; height: 1em;
+    background: var(--accent-3);
+    animation: tutBlink 0.8s step-end infinite;
+    vertical-align: text-bottom;
+    margin-left: 1px;
+}
+@keyframes tutBlink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+/* ──────────────────────────────────────────
+   SLIDE 7 — Link personalizado: mock form
+────────────────────────────────────────── */
+.tut-form-mock { display: flex; flex-direction: column; gap: 8px; }
+.tut-field-row { display: flex; flex-direction: column; gap: 3px; }
+.tut-field-label { font-size: 0.72rem; color: var(--text-dim); font-weight: 600; }
+.tut-field-input {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9px;
+    padding: 9px 13px;
+    color: var(--text);
+    font-size: 0.82rem;
+}
+.tut-field-input.filled { border-color: rgba(102,126,234,0.5); background: rgba(102,126,234,0.1); }
+.tut-form-btns { display: flex; gap: 8px; margin-top: 4px; }
+.tut-form-btn {
+    flex:1; height:38px; border:none; border-radius:9px;
+    font-size:0.8rem; font-weight:700; cursor:default;
+    display:flex; align-items:center; justify-content:center; gap:5px;
+}
+.tut-form-btn.cancel { background:rgba(255,255,255,0.08); color:var(--text-dim); }
+.tut-form-btn.confirm { background:linear-gradient(135deg,var(--accent-3),var(--accent-4)); color:#fff; }
+
+/* ── Footer controls ── */
+.tut-foot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+}
+.tut-dots-nav { display: flex; gap: 6px; flex: 1; justify-content: center; }
+.tut-dot-nav {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s;
+    padding: 0;
+}
+.tut-dot-nav.active { background: var(--accent-3); width: 22px; border-radius: 4px; }
+.tut-nav-btn {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 0 16px;
+    height: 40px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 7px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.tut-nav-btn:hover { background: rgba(255,255,255,0.15); }
+.tut-nav-btn.primary {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(102,126,234,0.35);
+}
+.tut-nav-btn.primary:hover { box-shadow: 0 6px 20px rgba(102,126,234,0.5); }
+.tut-nav-btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+
+@media (max-width: 480px) {
+    .tut-slide { padding: 18px 14px 14px; }
+    .tut-genre-grid { grid-template-columns: repeat(4,1fr); gap: 6px; }
+    .tut-genre-card i { font-size: 1.2rem; }
+    .tut-nav-btn span { display: none; }
+    .tut-nav-btn { padding: 0 12px; }
+}
+</style>
+
+<div class="tut-wrap" id="tutModal" role="dialog" aria-modal="true" aria-label="Tutorial Pesq Music">
+    <div class="tut-box">
+
+        <!-- Header -->
+        <div class="tut-head">
+            <div class="tut-head-icon"><i class="fas fa-circle-question"></i></div>
+            <h3>Sobre / Tutorial</h3>
+            <span class="tut-slide-lbl" id="tutSlideLabel">1 / 7</span>
+            <button class="tut-close" onclick="closeTutorial()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- Progress -->
+        <div class="tut-progress">
+            <div class="tut-progress-fill" id="tutProgress" style="width:14.28%"></div>
+        </div>
+
+        <!-- Slides -->
+        <div class="tut-viewport">
+            <div class="tut-slides" id="tutSlides">
+
+                <!-- ══ SLIDE 1: Boas-vindas ══ -->
+                <div class="tut-slide">
+                    <div class="tut-hero">
+                        <div class="tut-hero-icon">🎵🎬</div>
+                        <div class="tut-hero-title">Pesq Music &amp; Player</div>
+                        <p class="tut-hero-sub">
+                            Sua plataforma pessoal para <strong style="-webkit-text-fill-color:#a8edea;color:#a8edea">descobrir músicas</strong> e
+                            <strong style="-webkit-text-fill-color:#fed6e3;color:#fed6e3">assistir filmes</strong> direto do YouTube — sem anúncios, sem cadastro.
+                        </p>
+                        <div class="tut-feat-pills">
+                            <span class="tut-pill"><i class="fas fa-th-large"></i> Gêneros</span>
+                            <span class="tut-pill"><i class="fas fa-list-music"></i> Playlist</span>
+                            <span class="tut-pill"><i class="fas fa-play-circle"></i> Player</span>
+                            <span class="tut-pill"><i class="fas fa-search"></i> Pesquisa</span>
+                            <span class="tut-pill"><i class="fas fa-link"></i> Links</span>
+                        </div>
+                    </div>
+                    <p class="tut-slide-desc">
+                        Este tutorial rápido mostra como usar cada recurso do app em <strong>menos de 2 minutos</strong>.
+                        Use os botões <em>Anterior</em> e <em>Próximo</em> abaixo para navegar.
+                    </p>
+                </div>
+
+                <!-- ══ SLIDE 2: Explorar gêneros ══ -->
+                <div class="tut-slide">
+                    <div class="tut-slide-title">🎸 Explorando Gêneros</div>
+                    <p class="tut-slide-desc">
+                        A tela principal exibe um <strong>grid de gêneros musicais e categorias de filmes</strong>.
+                        Toque em qualquer card para abrir os resultados do YouTube para aquele estilo.
+                    </p>
+                    <div class="tut-demo">
+                        <div class="tut-genre-grid" id="tutGenreGrid">
+                            <div class="tut-genre-card"><i class="fas fa-guitar"></i><span>Rock</span></div>
+                            <div class="tut-genre-card"><i class="fas fa-microphone"></i><span>Pop</span></div>
+                            <div class="tut-genre-card"><i class="fas fa-bolt"></i><span>Eletrônica</span></div>
+                            <div class="tut-genre-card"><i class="fas fa-record-vinyl"></i><span>Hip-Hop</span></div>
+                            <div class="tut-genre-card"><i class="fas fa-leaf"></i><span>Reggae</span></div>
+                            <div class="tut-genre-card"><i class="fas fa-users"></i><span>Pagode</span></div>
+                            <div class="tut-genre-card"><i class="fas fa-drum"></i><span>Samba</span></div>
+                            <div class="tut-genre-card"><i class="fas fa-music"></i><span>MPB</span></div>
+                        </div>
+                    </div>
+                    <div class="tut-click-hint">
+                        <span class="tut-cursor">👆</span>
+                        Toque em qualquer card para ver os vídeos daquele gênero
+                    </div>
+                    <ul class="tut-tips">
+                        <li><i class="fas fa-filter" style="color:#a8edea"></i><span><strong>Filtros laterais</strong> (ícone ☰) permitem filtrar por categoria: Música Brasileira, Eletrônica, Filmes, etc.</span></li>
+                        <li><i class="fas fa-film" style="color:#ffd200"></i><span><strong>Filmes &amp; Séries</strong> ficam em categoria separada — busca vídeos de longa duração automaticamente.</span></li>
+                    </ul>
+                </div>
+
+                <!-- ══ SLIDE 3: Resultados de busca ══ -->
+                <div class="tut-slide">
+                    <div class="tut-slide-title">🔍 Selecionando Vídeos</div>
+                    <p class="tut-slide-desc">
+                        Ao escolher um gênero, um painel abre com os <strong>resultados do YouTube</strong>.
+                        Marque os vídeos que deseja e clique em <em>Adicionar</em> para incluí-los na sua playlist.
+                    </p>
+                    <div class="tut-demo">
+                        <div class="tut-result-list" id="tutResultList">
+                            <div class="tut-result-item">
+                                <div class="tut-result-thumb" style="background:linear-gradient(135deg,#ff6b6b,#ee5a24)"><i class="fab fa-youtube"></i></div>
+                                <div class="tut-result-info">
+                                    <div class="tut-result-title">Bohemian Rhapsody - Queen</div>
+                                    <div class="tut-result-sub">Queen Official · 1975</div>
+                                </div>
+                                <div class="tut-check-mock checked" id="tutCheck1"><i class="fas fa-check"></i></div>
+                            </div>
+                            <div class="tut-result-item">
+                                <div class="tut-result-thumb" style="background:linear-gradient(135deg,#a29bfe,#6c5ce7)"><i class="fab fa-youtube"></i></div>
+                                <div class="tut-result-info">
+                                    <div class="tut-result-title">Stairway to Heaven - Led Zeppelin</div>
+                                    <div class="tut-result-sub">Led Zeppelin · 1971</div>
+                                </div>
+                                <div class="tut-check-mock" id="tutCheck2"></div>
+                            </div>
+                            <div class="tut-result-item">
+                                <div class="tut-result-thumb" style="background:linear-gradient(135deg,#48dbfb,#0abde3)"><i class="fab fa-youtube"></i></div>
+                                <div class="tut-result-info">
+                                    <div class="tut-result-title">Hotel California - Eagles</div>
+                                    <div class="tut-result-sub">Eagles · 1977</div>
+                                </div>
+                                <div class="tut-check-mock checked" id="tutCheck3"><i class="fas fa-check"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="tut-tips">
+                        <li><i class="fas fa-check-square" style="color:#a8edea"></i><span><strong>Marcar/Desmarcar Todos</strong> seleciona ou limpa todos os resultados de uma vez.</span></li>
+                        <li><i class="fas fa-layer-group" style="color:#ffd200"></i><span><strong>Próxima Lista</strong> carrega mais 20 resultados do YouTube sem fechar o painel.</span></li>
+                    </ul>
+                </div>
+
+                <!-- ══ SLIDE 4: Playlist ══ -->
+                <div class="tut-slide">
+                    <div class="tut-slide-title">🎵 Gerenciando a Playlist</div>
+                    <p class="tut-slide-desc">
+                        Todos os vídeos adicionados ficam na <strong>Playlist</strong> — acessível pela barra lateral (desktop)
+                        ou pelo drawer à direita (mobile). Organize, reordene e controle a reprodução.
+                    </p>
+                    <div class="tut-demo tut-playlist-mock" style="background:none;border:none;padding:0;">
+                        <div class="tut-pl-header">
+                            <i class="fas fa-list-music" style="color:#fed6e3"></i>
+                            <span>Minha Playlist</span>
+                            <span class="tut-pl-badge">3 faixas</span>
+                        </div>
+                        <div class="tut-pl-items">
+                            <div class="tut-pl-item"><span class="tut-pl-num">1</span><span class="tut-pl-name">Bohemian Rhapsody</span></div>
+                            <div class="tut-pl-item"><span class="tut-pl-num">2</span><span class="tut-pl-name">Hotel California</span></div>
+                            <div class="tut-pl-item">
+                                <span class="tut-pl-num"><i class="fas fa-volume-up" style="color:var(--accent-3)"></i></span>
+                                <span class="tut-pl-name">Stairway to Heaven</span>
+                                <span class="tut-pl-playing"><i class="fas fa-circle" style="font-size:0.4rem"></i> tocando</span>
+                            </div>
+                        </div>
+                        <div class="tut-pl-actions-row">
+                            <button class="tut-act play"><i class="fas fa-play"></i> Play</button>
+                            <button class="tut-act add"><i class="fas fa-plus"></i> Mais</button>
+                            <button class="tut-act share"><i class="fab fa-whatsapp"></i> WA</button>
+                            <button class="tut-act clear"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <ul class="tut-tips">
+                        <li><i class="fab fa-whatsapp" style="color:#25d366"></i><span><strong>Compartilhar via WhatsApp</strong> envia todos os links da playlist numa única mensagem.</span></li>
+                        <li><i class="fas fa-trash" style="color:#f5576c"></i><span><strong>Limpar playlist</strong> remove todos os itens com um clique (com confirmação).</span></li>
+                    </ul>
+                </div>
+
+                <!-- ══ SLIDE 5: Player ══ -->
+                <div class="tut-slide">
+                    <div class="tut-slide-title">▶️ Usando o Player</div>
+                    <p class="tut-slide-desc">
+                        O <strong>Player</strong> abre automaticamente ao tocar uma faixa.
+                        Ele pode ficar em tela cheia ou <em>minimizado</em> no rodapé como mini-player.
+                    </p>
+                    <div class="tut-demo tut-player-mock" style="background:none;border:none;padding:0;">
+                        <div class="tut-pl-bar">
+                            <div class="tut-pl-bar-info">
+                                <div><span class="tut-pl-dot"></span><span class="tut-pl-label">Reproduzindo agora</span></div>
+                                <div class="tut-pl-title">Bohemian Rhapsody</div>
+                                <div class="tut-pl-artist">Queen · Rock</div>
+                            </div>
+                            <div style="display:flex;gap:6px;">
+                                <div style="width:28px;height:28px;background:rgba(255,255,255,0.08);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:var(--text-dim);"><i class="fas fa-chevron-down"></i></div>
+                                <div style="width:28px;height:28px;background:rgba(245,87,108,0.25);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;"><i class="fas fa-times"></i></div>
+                            </div>
+                        </div>
+                        <div class="tut-dots-row">
+                            <div class="tut-dot"></div>
+                            <div class="tut-dot now"></div>
+                            <div class="tut-dot"></div>
+                        </div>
+                        <div class="tut-video-placeholder">
+                            <div class="tut-play-icon"><i class="fas fa-play"></i></div>
+                            <span>iframe YouTube embutido</span>
+                        </div>
+                        <div class="tut-pl-ctrl">
+                            <button class="tut-ctrl-btn prev"><i class="fas fa-step-backward"></i> Anterior</button>
+                            <button class="tut-ctrl-btn auto"><i class="fas fa-redo"></i> Automático</button>
+                            <button class="tut-ctrl-btn next">Próximo <i class="fas fa-step-forward"></i></button>
+                        </div>
+                    </div>
+                    <ul class="tut-tips">
+                        <li><i class="fas fa-chevron-down" style="color:#a8edea"></i><span><strong>Minimizar</strong> (seta ↓) reduz para o mini-player no rodapé sem parar o vídeo.</span></li>
+                        <li><i class="fas fa-clone" style="color:#ffd200"></i><span><strong>Picture-in-Picture</strong> (ícone no mini-player) flutua o vídeo sobre outros apps.</span></li>
+                    </ul>
+                </div>
+
+                <!-- ══ SLIDE 6: Pesquisa livre ══ -->
+                <div class="tut-slide">
+                    <div class="tut-slide-title">🔎 Pesquisa Livre no YouTube</div>
+                    <p class="tut-slide-desc">
+                        Quer buscar algo específico? Use a <strong>Pesquisa Livre</strong> — disponível dentro do modal
+                        "Adicionar Link". Digite qualquer termo e veja os resultados diretamente.
+                    </p>
+                    <div class="tut-demo">
+                        <div class="tut-search-mock">
+                            <div class="tut-search-bar">
+                                <i class="fab fa-youtube" style="color:#f5576c;font-size:1.1rem;flex-shrink:0;"></i>
+                                <input type="text" value="Guns N' Roses November" readonly>
+                                <span class="tut-typing-cursor"></span>
+                                <button><i class="fas fa-search"></i> Buscar</button>
+                            </div>
+                            <div class="tut-result-list">
+                                <div class="tut-result-item" style="animation-delay:0.1s">
+                                    <div class="tut-result-thumb" style="background:linear-gradient(135deg,#2d3436,#000)"><i class="fab fa-youtube"></i></div>
+                                    <div class="tut-result-info">
+                                        <div class="tut-result-title">November Rain - Guns N' Roses</div>
+                                        <div class="tut-result-sub">GnR Official · 1991</div>
+                                    </div>
+                                    <i class="fas fa-copy" style="color:var(--accent-3);font-size:0.8rem;"></i>
+                                </div>
+                                <div class="tut-result-item" style="animation-delay:0.2s">
+                                    <div class="tut-result-thumb" style="background:linear-gradient(135deg,#2d3436,#555)"><i class="fab fa-youtube"></i></div>
+                                    <div class="tut-result-info">
+                                        <div class="tut-result-title">Sweet Child O' Mine (Live)</div>
+                                        <div class="tut-result-sub">GnR Official · 2021</div>
+                                    </div>
+                                    <i class="fas fa-copy" style="color:var(--accent-3);font-size:0.8rem;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="tut-tips">
+                        <li><i class="fas fa-mouse-pointer" style="color:#a8edea"></i><span>Clicar em um resultado <strong>preenche automaticamente</strong> o campo URL do formulário.</span></li>
+                        <li><i class="fas fa-copy" style="color:#ffd200"></i><span>O ícone de cópia ao lado de cada resultado <strong>copia o link</strong> para a área de transferência.</span></li>
+                    </ul>
+                </div>
+
+                <!-- ══ SLIDE 7: Link personalizado ══ -->
+                <div class="tut-slide">
+                    <div class="tut-slide-title">🔗 Adicionando Links Personalizados</div>
+                    <p class="tut-slide-desc">
+                        Adicione qualquer URL do YouTube, Spotify, SoundCloud e outros. Preencha o formulário
+                        com título, artista, gênero e o link — e ele entra direto na sua playlist.
+                    </p>
+                    <div class="tut-demo">
+                        <div class="tut-form-mock">
+                            <div class="tut-field-row">
+                                <span class="tut-field-label">Título *</span>
+                                <div class="tut-field-input filled">Bohemian Rhapsody</div>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <div class="tut-field-row">
+                                    <span class="tut-field-label">Artista</span>
+                                    <div class="tut-field-input filled">Queen</div>
+                                </div>
+                                <div class="tut-field-row">
+                                    <span class="tut-field-label">Gênero *</span>
+                                    <div class="tut-field-input filled" style="background:rgba(255,107,107,0.18);border-color:rgba(255,107,107,0.5);color:#ff9f9f;">🎸 Rock</div>
+                                </div>
+                            </div>
+                            <div class="tut-field-row">
+                                <span class="tut-field-label">URL *</span>
+                                <div class="tut-field-input filled" style="font-size:0.72rem;color:#a8edea;">https://youtube.com/watch?v=fJ9rU…</div>
+                            </div>
+                            <div class="tut-form-btns">
+                                <button class="tut-form-btn cancel">Cancelar</button>
+                                <button class="tut-form-btn confirm"><i class="fas fa-plus"></i> Adicionar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="tut-tips">
+                        <li><i class="fas fa-globe" style="color:#a8edea"></i><span>Suporta <strong>YouTube, Spotify, SoundCloud</strong> e qualquer URL embebível.</span></li>
+                        <li><i class="fas fa-info-circle" style="color:#ffd200"></i><span>Máximo de <strong>20 itens por playlist</strong>. Remova itens para abrir espaço.</span></li>
+                    </ul>
+                </div>
+
+            </div><!-- /tut-slides -->
+        </div><!-- /tut-viewport -->
+
+        <!-- Footer -->
+        <div class="tut-foot">
+            <button class="tut-nav-btn" id="tutBtnPrev" onclick="tutNav(-1)" disabled>
+                <i class="fas fa-chevron-left"></i><span>Anterior</span>
+            </button>
+            <div class="tut-dots-nav" id="tutDotsNav"></div>
+            <button class="tut-nav-btn primary" id="tutBtnNext" onclick="tutNav(1)">
+                <span>Próximo</span><i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+    </div><!-- /tut-box -->
+</div><!-- /tut-wrap -->
 
 <!-- Toast zone -->
 <div class="toast-zone" id="toastZone" aria-live="polite"></div>
@@ -2868,6 +3726,114 @@ function toast(msg, type = 'info') {
         setTimeout(() => el.remove(), 300);
     }, 3000);
 }
+
+/* ─── TUTORIAL ──────────────────────────────── */
+let tutCurrent = 0;
+const TUT_TOTAL = 7;
+
+function openTutorial() {
+    tutCurrent = 0;
+    buildTutDots();
+    tutGoTo(0, false);
+    document.getElementById('tutModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeTutorial() {
+    document.getElementById('tutModal').classList.remove('open');
+    document.body.style.overflow = '';
+    clearInterval(tutCheckInterval);
+}
+
+function buildTutDots() {
+    const nav = document.getElementById('tutDotsNav');
+    nav.innerHTML = '';
+    for (let i = 0; i < TUT_TOTAL; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'tut-dot-nav' + (i === 0 ? ' active' : '');
+        btn.setAttribute('aria-label', 'Slide ' + (i + 1));
+        btn.onclick = () => tutGoTo(i);
+        nav.appendChild(btn);
+    }
+}
+
+function tutGoTo(idx, animate = true) {
+    tutCurrent = idx;
+    const slides = document.getElementById('tutSlides');
+    if (animate) {
+        slides.style.transition = 'transform 0.45s cubic-bezier(0.4,0,0.2,1)';
+    } else {
+        slides.style.transition = 'none';
+    }
+    slides.style.transform = `translateX(-${idx * 100}%)`;
+
+    // Progress bar
+    document.getElementById('tutProgress').style.width =
+        ((idx + 1) / TUT_TOTAL * 100).toFixed(2) + '%';
+
+    // Slide label
+    document.getElementById('tutSlideLabel').textContent = `${idx + 1} / ${TUT_TOTAL}`;
+
+    // Dots
+    document.querySelectorAll('.tut-dot-nav').forEach((d, i) =>
+        d.classList.toggle('active', i === idx));
+
+    // Prev/Next buttons
+    document.getElementById('tutBtnPrev').disabled = idx === 0;
+    const nextBtn = document.getElementById('tutBtnNext');
+    if (idx === TUT_TOTAL - 1) {
+        nextBtn.innerHTML = '<i class="fas fa-check"></i><span>Fechar</span>';
+        nextBtn.onclick = closeTutorial;
+    } else {
+        nextBtn.innerHTML = '<span>Próximo</span><i class="fas fa-chevron-right"></i>';
+        nextBtn.onclick = () => tutNav(1);
+    }
+
+    // Re-trigger animations on current slide
+    const slide = document.querySelectorAll('.tut-slide')[idx];
+    if (slide) {
+        slide.querySelectorAll('[style*="animation-delay"], .tut-genre-card, .tut-result-item, .tut-pl-item, .tut-pill')
+            .forEach(el => {
+                el.style.animationName = 'none';
+                requestAnimationFrame(() => { el.style.animationName = ''; });
+            });
+    }
+
+    // Slide 3: animate checkbox toggling
+    clearInterval(tutCheckInterval);
+    if (idx === 2) { tutStartCheckAnim(); }
+}
+
+function tutNav(dir) {
+    const next = tutCurrent + dir;
+    if (next >= 0 && next < TUT_TOTAL) tutGoTo(next);
+}
+
+// Slide 3 — animate checkbox toggling loop
+let tutCheckInterval = null;
+function tutStartCheckAnim() {
+    const checks = ['tutCheck1','tutCheck2','tutCheck3'];
+    let step = 0;
+    tutCheckInterval = setInterval(() => {
+        step++;
+        const idx2 = step % checks.length;
+        const el = document.getElementById(checks[idx2]);
+        if (!el) return;
+        const isChecked = el.classList.contains('checked');
+        if (isChecked) {
+            el.classList.remove('checked');
+            el.innerHTML = '';
+        } else {
+            el.classList.add('checked');
+            el.innerHTML = '<i class="fas fa-check"></i>';
+        }
+    }, 900);
+}
+
+// Close tutorial on backdrop click
+document.getElementById('tutModal').addEventListener('click', function(e) {
+    if (e.target === this) closeTutorial();
+});
 
 // Service worker para PWA
 if ('serviceWorker' in navigator) {

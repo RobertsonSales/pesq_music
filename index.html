@@ -1639,19 +1639,36 @@
         </div>
         <div class="modal-body">
 
-            <!-- Título -->
+            <!-- ① Pesquisar no YouTube -->
+            <label class="f-label"><i class="fab fa-youtube" style="color:#ff0000;margin-right:4px;"></i> Pesquisar no YouTube <span style="color:var(--text-ghost);font-weight:400;font-size:0.78rem;">(preenche os campos abaixo)</span></label>
+            <div style="display:flex; gap:8px; margin-bottom:16px;">
+                <input class="f-input" id="webSearchTerm" placeholder="Artista, álbum, música..." style="margin-bottom:0;" autocomplete="off">
+                <button class="m-btn confirm" onclick="openWebSearch()" style="white-space:nowrap; padding:0 16px;">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </div>
+
+            <!-- ② URL -->
+            <label class="f-label">URL * <span style="color:var(--text-ghost);font-weight:400;font-size:0.78rem;">(YouTube, Spotify, SoundCloud…)</span></label>
+            <input class="f-input" id="fUrl" placeholder="https://www.youtube.com/watch?v=…"
+                   type="url" inputmode="url" autocomplete="off"
+                   onkeypress="if(event.key==='Enter')addCustomLink()">
+
+            <div style="height:1px;background:var(--border);margin:14px 0 16px;"></div>
+
+            <!-- ③ Título -->
             <label class="f-label">Título *</label>
             <input class="f-input" id="fTitle" placeholder="Ex: Bohemian Rhapsody" autocomplete="off">
 
-            <!-- Artista -->
+            <!-- ④ Artista -->
             <label class="f-label">Artista</label>
             <input class="f-input" id="fArtist" placeholder="Ex: Queen" autocomplete="off">
 
-            <!-- Álbum / Ano -->
+            <!-- ⑤ Álbum / Ano -->
             <label class="f-label">Álbum / Ano</label>
             <input class="f-input" id="fAlbum" placeholder="Ex: A Night at the Opera (1975)" autocomplete="off">
 
-            <!-- Gênero — visual picker -->
+            <!-- ⑥ Gênero — visual picker -->
             <label class="cat-picker-label">
                 Gênero / Categoria <span>*</span> — selecione um card (música ou filme):
             </label>
@@ -1664,22 +1681,7 @@
             </div>
             <div class="cat-picker-grid" id="catPickerGrid"></div>
 
-            <!-- NOVO: Campo de busca para pesquisa no YouTube -->
-            <label class="f-label">Pesquisar no YouTube (preenche automaticamente)</label>
-            <div style="display:flex; gap:8px; margin-bottom:16px;">
-                <input class="f-input" id="webSearchTerm" placeholder="Digite sua busca..." style="margin-bottom:0;">
-                <button class="m-btn confirm" onclick="openWebSearch()" style="white-space:nowrap; padding:0 16px;">
-                    <i class="fab fa-youtube"></i> Buscar
-                </button>
-            </div>
-
-            <!-- URL -->
-            <label class="f-label">URL *</label>
-            <input class="f-input" id="fUrl" placeholder="https://www.youtube.com/watch?v=…"
-                   type="url" inputmode="url" autocomplete="off"
-                   onkeypress="if(event.key==='Enter')addCustomLink()">
-
-            <p class="f-hint"><i class="fas fa-info-circle"></i> YouTube, Spotify, SoundCloud e outros. Suporta músicas e filmes/séries. Máx. 20 itens.</p>
+            <p class="f-hint"><i class="fas fa-info-circle"></i> Máx. 20 itens. Suporta YouTube, Spotify, SoundCloud e outros links embebíveis.</p>
         </div>
         <div class="modal-foot">
             <div></div>
@@ -3367,6 +3369,16 @@ async function _fetchSearchPage(replace) {
         let items = d.items || [];
         searchNextPageToken = d.nextPageToken || '';
 
+        // Deduplicação global: garante que o mesmo videoId jamais apareça
+        // duas vezes — nem dentro do lote, nem entre páginas consecutivas.
+        const _knownIds = new Set(searchItems.map(it => it.id?.videoId).filter(Boolean));
+        items = items.filter(it => {
+            const vid = it.id?.videoId;
+            if (!vid || _knownIds.has(vid)) return false;
+            _knownIds.add(vid);
+            return true;
+        });
+
         if (replace) {
             searchItems = items;
         } else {
@@ -3817,6 +3829,21 @@ async function performWebSearch(append) {
         webSearchNextToken = d.nextPageToken || '';
         const items = d.items || [];
 
+        // Busca duração de cada vídeo do lote
+        const wsDurations = {};
+        if (items.length) {
+            const ids = items.map(it => it.id?.videoId).filter(Boolean).join(',');
+            if (ids) {
+                try {
+                    const dr = await fetch(`/api/proxy?endpoint=videos&part=contentDetails&id=${ids}`);
+                    const dd = await dr.json();
+                    (dd.items || []).forEach(v => {
+                        wsDurations[v.id] = _parseDuration(v.contentDetails?.duration || '');
+                    });
+                } catch(_) {}
+            }
+        }
+
         if (!append) resultsDiv.innerHTML = '';
         else { const tmp = resultsDiv.querySelector('.loading-wrap'); if (tmp) tmp.remove(); }
 
@@ -3834,6 +3861,12 @@ async function performWebSearch(append) {
             const yr    = (item.snippet?.publishedAt || '').substring(0,4);
             const thumb = item.snippet?.thumbnails?.default?.url || '';
             const url2  = `https://www.youtube.com/watch?v=${vid}`;
+            const dur   = wsDurations[vid] || '';
+            const durBadge = dur
+                ? `<span class="m-duration short" style="margin-left:4px;">
+                       <i class="fas fa-clock" aria-hidden="true"></i> ${dur}
+                   </span>`
+                : '';
             const li    = document.createElement('li');
             li.className = 'media-item';
             li.style.cursor = 'pointer';
@@ -3842,9 +3875,12 @@ async function performWebSearch(append) {
                 <img class="m-thumb" src="${thumb}" alt="" loading="lazy">
                 <div class="m-info">
                     <span class="m-title">${title}</span>
-                    <div class="m-meta">${ch} · ${yr}</div>
+                    <div class="m-meta" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
+                        <span><i class="fab fa-youtube" style="color:#ff0000;"></i> ${ch}${yr ? ' · ' + yr : ''}</span>
+                        ${durBadge}
+                    </div>
                 </div>
-                <i class="fas fa-copy" style="color:var(--accent-3); margin-left:8px;" title="Copiar link"></i>`;
+                <i class="fas fa-copy" style="color:var(--accent-3); margin-left:8px; flex-shrink:0;" title="Copiar link"></i>`;
             list.appendChild(li);
         });
         resultsDiv.appendChild(list);

@@ -2948,18 +2948,21 @@ async function _fetchSearchPage(replace) {
             searchItems = [...searchItems, ...items];
         }
 
-        // For films: fetch content details (duration) for the new batch
-        if (searchIsFilm && items.length) {
+        // Fetch content details (duration) for every new batch,
+        // so músicas and filmes/séries exibem o tempo de duração.
+        if (items.length) {
             const ids = items.map(it => it.id.videoId).filter(Boolean).join(',');
-            try {
-                const dr = await fetch(
-                    `/api/proxy?endpoint=videos&part=contentDetails&id=${ids}`
-                );
-                const dd = await dr.json();
-                (dd.items || []).forEach(v => {
-                    searchDurations[v.id] = _parseDuration(v.contentDetails?.duration || '');
-                });
-            } catch(_) {}
+            if (ids) {
+                try {
+                    const dr = await fetch(
+                        `/api/proxy?endpoint=videos&part=contentDetails&id=${ids}`
+                    );
+                    const dd = await dr.json();
+                    (dd.items || []).forEach(v => {
+                        searchDurations[v.id] = _parseDuration(v.contentDetails?.duration || '');
+                    });
+                } catch(_) {}
+            }
         }
 
         if (!replace) {
@@ -3052,8 +3055,7 @@ function renderSearchItems(items, genre, isFilm, append) {
                    data-artist="${ea(ch)}"
                    data-album="${ea(albumVal)}"
                    data-cat="${ea(genre)}"
-                   ${isFilm && dur ? `data-duration="${ea(dur)}"` : ''}
-                   checked>
+                   ${dur ? `data-duration="${ea(dur)}"` : ''}>
             <img class="m-thumb" src="${thumb}" alt="Thumbnail: ${ea(title)}"
                  loading="lazy"
                  onclick="playDirect('${url}','${ea(title)}','${ea(ch)}','')"

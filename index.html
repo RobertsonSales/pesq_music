@@ -2741,6 +2741,245 @@ const CATS = [
     {id:'filmes',       label:'Filmes & Séries',   icon:'fa-film'},
 ];
 
+/* ─── GENRE SEARCH CONFIG ────────────────────────
+   Cada gênero define:
+     query       → string de busca principal (sem API key)
+     catId       → videoCategoryId do YouTube (10=Música, 1=Filme/Animação)
+     genreTerms  → termos que identificam o gênero (boosting)
+     rejectTerms → termos de outros gêneros (penalização / exclusão)
+     isFilm      → true apenas para categorias de filmes & séries
+──────────────────────────────────────────────── */
+const GENRE_SEARCH_CONFIG = {
+    /* ── MÚSICA ─────────────────────────────────────────────────────── */
+    'Rock': {
+        query: 'rock "full album" OR "álbum completo" OR "complete album" -trailer -teaser -sample -amostra -snippet -preview',
+        catId: '10',
+        genreTerms: ['rock','classic rock','hard rock','alternative rock','grunge','punk','progressive rock','rock clássico','rock alternativo','rock nacional'],
+        rejectTerms: ['pagode','sertanejo','funk carioca','forró','axé','gospel','reggaeton','k-pop','anime']
+    },
+    'Pop': {
+        query: 'pop "full album" OR "álbum completo" OR "complete album" OR "greatest hits" -trailer -teaser -sample -amostra',
+        catId: '10',
+        genreTerms: ['pop','pop music','pop hits','pop álbum','top pop','pop star','teen pop','synth pop'],
+        rejectTerms: ['pagode','sertanejo','forró','axé','heavy metal','death metal','jazz','clássica','k-pop']
+    },
+    'Eletrônica': {
+        query: 'electronic EDM "full album" OR "álbum completo" OR "full mix" house techno trance -trailer -teaser -sample -amostra',
+        catId: '10',
+        genreTerms: ['electronic','edm','house','techno','trance','eletrônica','eletro','dance music','dubstep','drum and bass','ambient electronic'],
+        rejectTerms: ['pagode','sertanejo','forró','axé','gospel','rock acústico','jazz','clássica']
+    },
+    'Hip-Hop': {
+        query: 'hip-hop rap "full album" OR "álbum completo" OR "complete album" -trailer -teaser -sample -snippet -amostra',
+        catId: '10',
+        genreTerms: ['hip hop','hip-hop','rap','trap','conscious rap','gangsta rap','freestyle rap','mc'],
+        rejectTerms: ['jazz','clássica','sertanejo','gospel','pagode','forró','axé','rock','metal']
+    },
+    'Jazz': {
+        query: 'jazz "full album" OR "álbum completo" OR "complete album" -trailer -teaser -sample -amostra',
+        catId: '10',
+        genreTerms: ['jazz','smooth jazz','bebop','jazz fusion','jazz standards','swing','cool jazz','latin jazz','free jazz'],
+        rejectTerms: ['rock','pop','hip hop','rap','sertanejo','gospel','pagode','funk carioca']
+    },
+    'Clássica': {
+        query: 'classical music "full album" OR "obra completa" OR "complete symphony" OR "complete concerto" -trailer -teaser -sample',
+        catId: '10',
+        genreTerms: ['classical','clássica','orchestra','symphony','concerto','opera','sonata','beethoven','mozart','bach','chopin','brahms','handel','debussy','vivaldi'],
+        rejectTerms: ['rock','pop','hip hop','rap','pagode','sertanejo','funk','gospel moderno']
+    },
+    'Reggae': {
+        query: 'reggae "full album" OR "álbum completo" OR "complete album" -trailer -teaser -sample -amostra',
+        catId: '10',
+        genreTerms: ['reggae','dancehall','roots reggae','dub','ska','bob marley','reggae music'],
+        rejectTerms: ['rock','pop','hip hop','sertanejo','forró','axé','pagode','gospel']
+    },
+    'Pagode': {
+        query: 'pagode "álbum completo" OR "full album" OR "coletânea" -trailer -teaser -amostra -trecho -snippet',
+        catId: '10',
+        genreTerms: ['pagode','pagodeiro','pagodão','partido alto','samba pagode','roda de pagode','botequim'],
+        rejectTerms: ['rock','pop','hip hop','forró','gospel','sertanejo universitário','axé','funk carioca']
+    },
+    'Samba': {
+        query: 'samba "álbum completo" OR "full album" OR "coletânea" -trailer -teaser -amostra -trecho',
+        catId: '10',
+        genreTerms: ['samba','samba-enredo','samba canção','roda de samba','samba de raiz','samba enredo','escola de samba'],
+        rejectTerms: ['rock','pop','forró','gospel','funk carioca','sertanejo','trap','axé']
+    },
+    'MPB': {
+        query: 'MPB "música popular brasileira" "álbum completo" OR "full album" -trailer -teaser -amostra -trecho',
+        catId: '10',
+        genreTerms: ['mpb','música popular brasileira','caetano veloso','gilberto gil','chico buarque','djavan','milton nascimento','gal costa','elis regina','ivan lins'],
+        rejectTerms: ['rock pesado','hip hop','trap','funk carioca','forró universitário','sertanejo','gospel pop']
+    },
+    'Blues': {
+        query: 'blues "full album" OR "álbum completo" OR "complete album" -trailer -teaser -sample -amostra',
+        catId: '10',
+        genreTerms: ['blues','delta blues','electric blues','chicago blues','rhythm and blues','blues rock','slow blues','12 bar blues'],
+        rejectTerms: ['pop','hip hop','rap','pagode','sertanejo','funk','gospel contemporâneo']
+    },
+    'Country': {
+        query: 'country music "full album" OR "álbum completo" OR "complete album" -trailer -teaser -sample -amostra',
+        catId: '10',
+        genreTerms: ['country','country music','bluegrass','americana','outlaw country','country rock','nashville','folk country'],
+        rejectTerms: ['hip hop','rap','pagode','sertanejo','funk','gospel'],
+    },
+    'R&B': {
+        query: 'R&B soul "full album" OR "álbum completo" OR "complete album" -trailer -teaser -sample -amostra',
+        catId: '10',
+        genreTerms: ['r&b','rnb','soul','neo soul','rhythm and blues','contemporary r&b','smooth r&b'],
+        rejectTerms: ['rock','jazz puro','pagode','sertanejo','forró','axé','gospel hard']
+    },
+    'Metal': {
+        query: 'metal "full album" OR "álbum completo" OR "complete album" -trailer -teaser -sample -amostra -snippet',
+        catId: '10',
+        genreTerms: ['metal','heavy metal','death metal','thrash metal','black metal','power metal','metalcore','progressive metal','doom metal'],
+        rejectTerms: ['pop','hip hop','rap','pagode','sertanejo','forró','axé','gospel','k-pop']
+    },
+    'Indie': {
+        query: 'indie "full album" OR "álbum completo" OR "complete album" independent music -trailer -teaser -sample',
+        catId: '10',
+        genreTerms: ['indie','indie rock','indie pop','indie folk','lo-fi','alternative indie','bedroom pop','shoegaze'],
+        rejectTerms: ['pagode','sertanejo','forró','axé','gospel','funk carioca','k-pop','metal pesado']
+    },
+    'K-Pop': {
+        query: 'K-Pop "full album" OR "álbum completo" OR "mini album" korean -trailer -teaser -sample -teaser -mv only',
+        catId: '10',
+        genreTerms: ['k-pop','kpop','korean pop','bts','blackpink','twice','exo','got7','stray kids','aespa','nct','iu','seventeen'],
+        rejectTerms: ['j-pop','c-pop','thai pop','pagode','sertanejo','forró','rock','gospel','metal']
+    },
+    'Forró': {
+        query: 'forró "álbum completo" OR "full album" OR "coletânea" -trailer -teaser -amostra -trecho -snippet',
+        catId: '10',
+        genreTerms: ['forró','xote','baião','forró universitário','forró eletrônico','luiz gonzaga','forró pé de serra','zabumba','triângulo'],
+        rejectTerms: ['samba','pagode','gospel','rock','pop internacional','funk carioca','axé','trap']
+    },
+    'Axé': {
+        query: 'axé music "álbum completo" OR "full album" OR "coletânea" bahia -trailer -teaser -amostra -trecho',
+        catId: '10',
+        genreTerms: ['axé','axe music','axé music','trio elétrico','bahia','carnaval axé','ivete sangalo','daniela mercury','chiclete com banana'],
+        rejectTerms: ['samba','pagode','gospel','rock','funk carioca','forró','pagode','trap']
+    },
+    'Bossa Nova': {
+        query: 'bossa nova "álbum completo" OR "full album" OR "coletânea" -trailer -teaser -amostra -trecho',
+        catId: '10',
+        genreTerms: ['bossa nova','bossanova','joão gilberto','tom jobim','vinicius de moraes','garota de ipanema','jazz brasileiro','samba bossa'],
+        rejectTerms: ['rock','hip hop','trap','forró','axé','pagode','funk carioca']
+    },
+    'Gospel': {
+        query: 'gospel "álbum completo" OR "full album" louvor adoração worship -trailer -teaser -amostra -trecho',
+        catId: '10',
+        genreTerms: ['gospel','louvor','adoração','worship','cristão','christian','praise','hino','evangélico','gospel music'],
+        rejectTerms: ['rock secular','hip hop secular','sertanejo','pagode','axé','funk','trap','metal satânico']
+    },
+
+    /* ── FILMES & SÉRIES ──────────────────────────────────────────────── */
+    'Ação': {
+        query: 'filme ação completo dublado "full movie" action -trailer -teaser -clipe -curta',
+        catId: '1',
+        genreTerms: ['ação','action','luta','combate','perseguição','explosão','operação especial','guerra ação'],
+        rejectTerms: ['terror','horror','animação infantil','comédia','documentário natureza','anime'],
+        isFilm: true
+    },
+    'Comédia': {
+        query: 'comédia filme completo dublado comedy "full movie" -trailer -teaser -clipe -curta',
+        catId: '1',
+        genreTerms: ['comédia','comedy','engraçado','humor','hilário','piada','comédia romântica'],
+        rejectTerms: ['terror','horror','ação violenta','documentário','anime'],
+        isFilm: true
+    },
+    'Drama': {
+        query: 'drama filme completo dublado drama "full movie" -trailer -teaser -clipe -curta',
+        catId: '1',
+        genreTerms: ['drama','dramático','drama social','drama familiar','drama histórico'],
+        rejectTerms: ['terror','horror','comédia','animação infantil','ficção científica'],
+        isFilm: true
+    },
+    'Terror': {
+        query: 'terror horror filme completo dublado horror "full movie" -trailer -teaser -clipe -curta',
+        catId: '1',
+        genreTerms: ['terror','horror','suspense terror','medo','assombração','sobrenatural horror','slasher','zumbi','fantasma'],
+        rejectTerms: ['comédia','animação infantil','romance','documentário natureza','ficção científica'],
+        isFilm: true
+    },
+    'Ficção Científica': {
+        query: 'ficção científica sci-fi filme completo dublado "full movie" -trailer -teaser -clipe',
+        catId: '1',
+        genreTerms: ['ficção científica','sci-fi','scifi','space','espaço','futurista','robô','alien','viagem no tempo','distopia'],
+        rejectTerms: ['comédia','animação infantil','terror','documentário simples'],
+        isFilm: true
+    },
+    'Animação': {
+        query: 'animação filme completo dublado animated "full movie" -trailer -teaser -clipe -curta',
+        catId: '1',
+        genreTerms: ['animação','animation','animated','desenho animado','cartoon','CGI filme','pixar','dreamworks'],
+        rejectTerms: ['terror','live action','documentário','anime adulto'],
+        isFilm: true
+    },
+    'Documentário': {
+        query: 'documentário completo documentary "full documentary" -trailer -teaser -clipe -curta',
+        catId: '1',
+        genreTerms: ['documentário','documentary','documental','reportagem especial','investigação jornalística'],
+        rejectTerms: ['terror','comédia','animação infantil','ficção'],
+        isFilm: true
+    },
+    'Romance': {
+        query: 'romance romântico filme completo dublado romantic "full movie" -trailer -teaser -clipe',
+        catId: '1',
+        genreTerms: ['romance','romantic','romântico','amor','love story','comédia romântica','drama romântico'],
+        rejectTerms: ['terror','horror','ação violenta','documentário'],
+        isFilm: true
+    },
+    'Thriller': {
+        query: 'thriller suspense filme completo dublado thriller "full movie" -trailer -teaser -clipe',
+        catId: '1',
+        genreTerms: ['thriller','suspense','tensão','mistério','psychological thriller','crime thriller'],
+        rejectTerms: ['comédia','animação infantil','documentário natureza'],
+        isFilm: true
+    },
+    'Aventura': {
+        query: 'aventura filme completo dublado adventure "full movie" -trailer -teaser -clipe -curta',
+        catId: '1',
+        genreTerms: ['aventura','adventure','épico','jornada','exploração','expedição','pirata','tesouro'],
+        rejectTerms: ['terror','comédia slapstick','documentário','anime'],
+        isFilm: true
+    },
+    'Fantasia': {
+        query: 'fantasia filme completo dublado fantasy "full movie" -trailer -teaser -clipe',
+        catId: '1',
+        genreTerms: ['fantasia','fantasy','magia','magic','dragão','elfos','feiticeiro','reino fantástico','épico fantasia'],
+        rejectTerms: ['terror','documentário','comédia simples'],
+        isFilm: true
+    },
+    'Crime': {
+        query: 'crime máfia filme completo dublado crime "full movie" -trailer -teaser -clipe',
+        catId: '1',
+        genreTerms: ['crime','máfia','gangster','policial','investigação','detetive','noir','neo-noir'],
+        rejectTerms: ['comédia','animação infantil','documentário natureza','sci-fi'],
+        isFilm: true
+    },
+    'Anime': {
+        query: 'anime completo dublado OR legendado "episódio completo" OR "temporada completa" -trailer -teaser -opening only',
+        catId: '1',
+        genreTerms: ['anime','mangá','naruto','one piece','dragon ball','attack on titan','demon slayer','my hero academia','sword art online','fullmetal'],
+        rejectTerms: ['live action','documentário','comédia americana','desenho infantil ocidental'],
+        isFilm: true
+    },
+    'Séries': {
+        query: 'série temporada completa dublada "full season" OR "temporada completa" -trailer -teaser -resumo',
+        catId: '1',
+        genreTerms: ['série','series','temporada','episódio','season','episode','serie completa','sitcom'],
+        rejectTerms: ['animação infantil','documentário curto','trailer apenas'],
+        isFilm: true
+    },
+    'Super-heróis': {
+        query: 'super heróis superheroes filme completo dublado "full movie" marvel dc -trailer -teaser -clipe',
+        catId: '1',
+        genreTerms: ['super-heróis','superhero','super herói','marvel','dc','batman','superman','spider-man','avengers','justice league','thor','iron man'],
+        rejectTerms: ['comédia','terror','documentário'],
+        isFilm: true
+    },
+};
+
 /* ─── STATE ──────────────────────────────────── */
 let playlist    = JSON.parse(localStorage.getItem('pesqmusic_v4')) || [];
 let viewCat     = 'all';
@@ -2753,6 +2992,7 @@ let selectedCat = '';   // category selected in custom link modal
 let searchNextPageToken = '';   // YouTube nextPageToken
 let searchIsFilm        = false;
 let searchCurrentQ      = '';
+let searchGenreConfig   = null; // configuração de query/filtro para o gênero selecionado
 let searchDurations     = {};   // videoId → formatted duration string
 let searchDurationSecs  = {};   // videoId → duration in seconds
 
@@ -2908,15 +3148,34 @@ function _isoDurationToSeconds(iso) {
     return (h * 3600) + (min * 60) + sec;
 }
 
-function _isUndesiredMusicResult(item) {
+function _isUndesiredMusicResult(item, config) {
     const title = _normalizeSearchText(item?.snippet?.title || '');
     const desc  = _normalizeSearchText(item?.snippet?.description || '');
-    const text  = `${title} ${desc}`;
-    const blockedTerms = ['trailer','teaser','preview','sample','amostra','trecho','snippet','shorts'];
-    return blockedTerms.some(term => text.includes(term));
+    const ch    = _normalizeSearchText(item?.snippet?.channelTitle || '');
+    const text  = `${title} ${desc} ${ch}`;
+
+    // Bloqueia termos genéricos de conteúdo indesejado
+    const blockedTerms = [
+        'trailer','teaser','preview','sample','amostra','trecho',
+        'snippet','#shorts','short clip','music video only','mv only',
+        'opening only','clipe oficial apenas','promo','promocional'
+    ];
+    if (blockedTerms.some(term => text.includes(term))) return true;
+
+    // Verifica contaminação de gênero: resultado com termos de outro
+    // gênero e sem nenhum termo do gênero selecionado → descarta
+    if (config?.rejectTerms && config?.genreTerms) {
+        const normReject = config.rejectTerms.map(t => _normalizeSearchText(t));
+        const normGenre  = config.genreTerms.map(t => _normalizeSearchText(t));
+        const hasReject  = normReject.some(t => text.includes(t));
+        const hasGenre   = normGenre.some(t => text.includes(t));
+        if (hasReject && !hasGenre) return true;
+    }
+
+    return false;
 }
 
-function _scoreMusicResult(item) {
+function _scoreMusicResult(item, config) {
     const vid   = item?.id?.videoId || '';
     const title = _normalizeSearchText(item?.snippet?.title || '');
     const desc  = _normalizeSearchText(item?.snippet?.description || '');
@@ -2925,25 +3184,100 @@ function _scoreMusicResult(item) {
     const secs  = searchDurationSecs[vid] || 0;
     let score = 0;
 
+    // Boost por tipo de conteúdo "álbum completo"
     const albumBoosts = [
         'full album', 'album completo', 'complete album', 'playlist completa',
-        'coletanea completa', 'coletanea', 'discografia', 'greatest hits', 'ao vivo completo'
+        'coletanea completa', 'coletanea', 'discografia', 'greatest hits',
+        'ao vivo completo', 'obra completa', 'mini album', 'ep completo'
     ];
     albumBoosts.forEach(term => {
         if (text.includes(term)) score += 18;
     });
 
     if (title.includes('album')) score += 10;
-    if (title.includes('full')) score += 4;
-    if (title.includes('mix')) score += 3;
+    if (title.includes('full'))  score += 4;
+    if (title.includes('mix'))   score += 3;
 
-    if (secs >= 3600) score += 16;
-    else if (secs >= 2400) score += 12;
-    else if (secs >= 1200) score += 8;
-    else if (secs >= 900) score += 5;
-    else if (secs > 0 && secs < 240) score -= 12;
+    // Boost por duração (preferência por conteúdo longo = álbum completo)
+    if (secs >= 3600)      score += 18;
+    else if (secs >= 2400) score += 14;
+    else if (secs >= 1200) score += 9;
+    else if (secs >= 900)  score += 5;
+    else if (secs > 0 && secs < 180) score -= 15;  // muito curto = single/trecho
 
+    // Penalidade por conteúdo indesejado
     if (text.includes('trailer') || text.includes('sample') || text.includes('amostra')) score -= 30;
+    if (text.includes('teaser'))  score -= 25;
+    if (text.includes('preview')) score -= 20;
+    if (text.includes('trecho'))  score -= 20;
+
+    // Boost por relevância de gênero
+    if (config?.genreTerms) {
+        const normGenre = config.genreTerms.map(t => _normalizeSearchText(t));
+        normGenre.forEach(t => { if (text.includes(t)) score += 10; });
+    }
+
+    // Penalidade por contaminação de gênero
+    if (config?.rejectTerms) {
+        const normReject = config.rejectTerms.map(t => _normalizeSearchText(t));
+        normReject.forEach(t => { if (text.includes(t)) score -= 18; });
+    }
+
+    return score;
+}
+
+function _isUndesiredFilmResult(item, config) {
+    const title = _normalizeSearchText(item?.snippet?.title || '');
+    const desc  = _normalizeSearchText(item?.snippet?.description || '');
+    const ch    = _normalizeSearchText(item?.snippet?.channelTitle || '');
+    const text  = `${title} ${desc} ${ch}`;
+
+    const blockedTerms = ['trailer','teaser','preview','clipe','opening only','resumo apenas','recap','highlight'];
+    if (blockedTerms.some(term => text.includes(term))) return true;
+
+    if (config?.rejectTerms && config?.genreTerms) {
+        const normReject = config.rejectTerms.map(t => _normalizeSearchText(t));
+        const normGenre  = config.genreTerms.map(t => _normalizeSearchText(t));
+        const hasReject  = normReject.some(t => text.includes(t));
+        const hasGenre   = normGenre.some(t => text.includes(t));
+        if (hasReject && !hasGenre) return true;
+    }
+
+    return false;
+}
+
+function _scoreFilmResult(item, config) {
+    const vid   = item?.id?.videoId || '';
+    const title = _normalizeSearchText(item?.snippet?.title || '');
+    const desc  = _normalizeSearchText(item?.snippet?.description || '');
+    const ch    = _normalizeSearchText(item?.snippet?.channelTitle || '');
+    const text  = `${title} ${desc} ${ch}`;
+    const secs  = searchDurationSecs[vid] || 0;
+    let score = 0;
+
+    const filmBoosts = ['completo','full movie','filme inteiro','legendado','dublado','temporada completa','full season','episodio completo'];
+    filmBoosts.forEach(term => { if (text.includes(term)) score += 16; });
+
+    if (secs >= 4800)      score += 20;
+    else if (secs >= 3600) score += 16;
+    else if (secs >= 2400) score += 10;
+    else if (secs >= 1800) score += 6;
+    else if (secs > 0 && secs < 600) score -= 20;
+
+    if (text.includes('trailer') || text.includes('teaser')) score -= 40;
+    if (text.includes('clipe'))   score -= 25;
+    if (text.includes('resumo'))  score -= 20;
+    if (text.includes('recap'))   score -= 20;
+
+    if (config?.genreTerms) {
+        const normGenre = config.genreTerms.map(t => _normalizeSearchText(t));
+        normGenre.forEach(t => { if (text.includes(t)) score += 8; });
+    }
+    if (config?.rejectTerms) {
+        const normReject = config.rejectTerms.map(t => _normalizeSearchText(t));
+        normReject.forEach(t => { if (text.includes(t)) score -= 15; });
+    }
+
     return score;
 }
 
@@ -2951,16 +3285,18 @@ function _scoreMusicResult(item) {
 async function searchYT(genre) {
     currentGenre = genre;
     const genreObj = GENRES.find(g => g.name === genre);
-    searchIsFilm   = !!(genreObj && genreObj.type === 'film');
+    searchIsFilm        = !!(genreObj && genreObj.type === 'film');
     searchNextPageToken = '';
     searchDurations     = {};
     searchDurationSecs  = {};
+    searchGenreConfig   = GENRE_SEARCH_CONFIG[genre] || null;
 
-    // Film search: target full movies/episodes (long videos)
-    if (searchIsFilm) {
-        searchCurrentQ = `${genre} filme completo dublado legendado`;
+    if (searchGenreConfig) {
+        searchCurrentQ = searchGenreConfig.query;
+    } else if (searchIsFilm) {
+        searchCurrentQ = `${genre} filme completo dublado legendado -trailer -teaser -clipe -curta`;
     } else {
-        searchCurrentQ = `${genre} full album album completo complete album playlist completa -trailer -teaser -preview -sample -amostra`;
+        searchCurrentQ = `${genre} "full album" OR "álbum completo" OR "complete album" -trailer -teaser -preview -sample -amostra -snippet`;
     }
 
     const modalTitle = searchIsFilm
@@ -2990,8 +3326,9 @@ async function _fetchSearchPage(replace) {
     try {
         // Build search URL via proxy — a chave é injetada no servidor
         let url = `/api/proxy?endpoint=search&part=snippet&q=${encodeURIComponent(searchCurrentQ)}&type=video&maxResults=20`;
-        if (searchIsFilm)          url += `&videoDuration=long`;
-        if (searchNextPageToken)   url += `&pageToken=${encodeURIComponent(searchNextPageToken)}`;
+        if (searchIsFilm)                  url += `&videoDuration=long`;
+        if (searchNextPageToken)           url += `&pageToken=${encodeURIComponent(searchNextPageToken)}`;
+        if (searchGenreConfig?.catId)      url += `&videoCategoryId=${searchGenreConfig.catId}`;
 
         const r = await fetch(url);
         const d = await r.json();
@@ -3027,8 +3364,14 @@ async function _fetchSearchPage(replace) {
 
         if (!searchIsFilm && items.length) {
             items = items
-                .filter(item => !_isUndesiredMusicResult(item))
-                .sort((a, b) => _scoreMusicResult(b) - _scoreMusicResult(a));
+                .filter(item => !_isUndesiredMusicResult(item, searchGenreConfig))
+                .sort((a, b) => _scoreMusicResult(b, searchGenreConfig) - _scoreMusicResult(a, searchGenreConfig));
+        }
+
+        if (searchIsFilm && items.length) {
+            items = items
+                .filter(item => !_isUndesiredFilmResult(item, searchGenreConfig))
+                .sort((a, b) => _scoreFilmResult(b, searchGenreConfig) - _scoreFilmResult(a, searchGenreConfig));
         }
 
         if (!replace) {

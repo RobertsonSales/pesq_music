@@ -3481,10 +3481,6 @@ function minimizePlayer() {
     document.getElementById('playerWrap').classList.remove('open');
     document.getElementById('miniPlayer').style.display = 'flex';
     updateMiniPlayer();
-    document.getElementById('pipNote').style.display = 'flex';
-    setTimeout(() => {
-        document.getElementById('pipNote').style.display = 'none';
-    }, 5000);
 }
 
 function maximizePlayer() {
@@ -3596,51 +3592,85 @@ window.addEventListener('message', e => {
 });
 
 /* ─── PICTURE-IN-PICTURE ─────────────────────── */
+let _pipWindow = null;
+
 async function requestPictureInPicture() {
-    if (!document.pictureInPictureEnabled) {
-        toast('Picture-in-Picture não é suportado neste navegador', 'warning');
+    const iframe    = document.getElementById('plIframe');
+    const videoArea = document.getElementById('plVideoArea');
+
+    /* ── 1. Fechar PiP se já estiver aberto ── */
+    if (_pipWindow && !_pipWindow.closed) {
+        _pipWindow.close();
         return;
     }
 
-    // Se já está em PiP, sair
-    if (document.pictureInPictureElement) {
+    /* ── 2. Document Picture-in-Picture API (Chrome 116+) ──
+       Move o iframe inteiro para a janela flutuante.
+       É a única forma confiável de fazer PiP com iframes cross-origin. */
+    if ('documentPictureInPicture' in window) {
         try {
-            await document.exitPictureInPicture();
-        } catch (e) {
-            console.warn('Erro ao sair do PiP:', e);
-        }
-        return;
-    }
+            _pipWindow = await window.documentPictureInPicture.requestWindow({
+                width : Math.min(640, Math.round(window.innerWidth  * 0.55)),
+                height: Math.min(380, Math.round(window.innerHeight * 0.50)),
+                disallowReturnToOpener: false
+            });
 
-    const iframe = document.getElementById('plIframe');
-    let video = null;
+            /* Estilos mínimos para o iframe preencher a janela PiP */
+            const style = _pipWindow.document.createElement('style');
+            style.textContent = `
+                * { margin:0; padding:0; box-sizing:border-box; }
+                body { background:#000; width:100%; height:100%; overflow:hidden; }
+                iframe { width:100%; height:100%; border:none; display:block; }
+            `;
+            _pipWindow.document.head.appendChild(style);
 
-    // Tenta acessar o <video> dentro do iframe (funciona para same-origin
-    // e, em navegadores modernos, também para cross-origin com allow="picture-in-picture")
-    try {
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (iframeDoc) {
-            video = iframeDoc.querySelector('video');
-        }
-    } catch (e) {
-        // Cross-origin — sem acesso direto ao DOM do iframe
-    }
+            /* Move o iframe (preserva reprodução em andamento) */
+            _pipWindow.document.body.appendChild(iframe);
 
-    if (video) {
-        try {
-            await video.requestPictureInPicture();
+            /* Ao fechar a janela PiP, devolve o iframe ao player */
+            _pipWindow.addEventListener('pagehide', () => {
+                videoArea.appendChild(iframe);
+                _pipWindow = null;
+            });
+
+            toast('▶ Reproduzindo em Picture-in-Picture', 'success');
             return;
-        } catch (e) {
-            console.warn('PiP falhou no <video>:', e);
+        } catch (err) {
+            console.warn('Document PiP falhou:', err);
+            /* Segue para os fallbacks abaixo */
         }
     }
 
-    // Fallback: instrução manual para o usuário
-    toast('Clique com o botão direito no vídeo e selecione "Picture-in-Picture"', 'info');
-    document.getElementById('pipNote').style.display = 'flex';
-    setTimeout(() => {
-        document.getElementById('pipNote').style.display = 'none';
-    }, 5000);
+    /* ── 3. Element PiP (video nativo same-origin) ──
+       Funciona se o conteúdo for same-origin ou se o navegador
+       permitir acesso cross-origin ao contentDocument. */
+    if (document.pictureInPictureEnabled) {
+        let video = null;
+        try {
+            const doc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (doc) video = doc.querySelector('video');
+        } catch (_) { /* cross-origin bloqueado */ }
+
+        if (video) {
+            try {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else {
+                    await video.requestPictureInPicture();
+                    toast('▶ Reproduzindo em Picture-in-Picture', 'success');
+                }
+                return;
+            } catch (err) {
+                console.warn('Element PiP falhou:', err);
+            }
+        }
+    }
+
+    /* ── 4. Fallback final: instrução manual ── */
+    toast('Clique com o botão direito no vídeo → "Picture-in-Picture"', 'info');
+    const note = document.getElementById('pipNote');
+    note.style.display = 'flex';
+    setTimeout(() => { note.style.display = 'none'; }, 6000);
 }
 
 /* ─── DRAWERS (mobile) ───────────────────────── */

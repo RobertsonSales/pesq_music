@@ -1782,7 +1782,9 @@
 ══════════════════════════════════════════ -->
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ─── CONFIG ─────────────────────────────────── */
-const YT_KEY = 'AIzaSyDDurTsa7i_xO6d3R4Mxr9EGMad-34zknc';
+// ⚠️  A chave da API YouTube foi removida do front-end.
+// Todas as chamadas passam pelo proxy Vercel em /api/proxy,
+// que injeta a chave via variável de ambiente YT_KEY no servidor.
 
 /* ─── GENRES DATA ────────────────────────────── */
 const GENRES = [
@@ -2025,8 +2027,8 @@ async function _fetchSearchPage(replace) {
     }
 
     try {
-        // Build search URL — for films request only long-duration videos
-        let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchCurrentQ)}&type=video&maxResults=20&key=${YT_KEY}`;
+        // Build search URL via proxy — a chave é injetada no servidor
+        let url = `/api/proxy?endpoint=search&part=snippet&q=${encodeURIComponent(searchCurrentQ)}&type=video&maxResults=20`;
         if (searchIsFilm)          url += `&videoDuration=long`;
         if (searchNextPageToken)   url += `&pageToken=${encodeURIComponent(searchNextPageToken)}`;
 
@@ -2048,7 +2050,7 @@ async function _fetchSearchPage(replace) {
             const ids = items.map(it => it.id.videoId).filter(Boolean).join(',');
             try {
                 const dr = await fetch(
-                    `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${YT_KEY}`
+                    `/api/proxy?endpoint=videos&part=contentDetails&id=${ids}`
                 );
                 const dd = await dr.json();
                 (dd.items || []).forEach(v => {
@@ -2461,7 +2463,7 @@ async function performWebSearch(append) {
     }
 
     try {
-        let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(term)}&type=video&maxResults=20&key=${YT_KEY}`;
+        let url = `/api/proxy?endpoint=search&part=snippet&q=${encodeURIComponent(term)}&type=video&maxResults=20`;
         if (webSearchNextToken) url += `&pageToken=${encodeURIComponent(webSearchNextToken)}`;
 
         const r = await fetch(url);

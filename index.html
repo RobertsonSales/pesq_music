@@ -3601,6 +3601,41 @@ async function requestPictureInPicture() {
         toast('Picture-in-Picture não é suportado neste navegador', 'warning');
         return;
     }
+
+    // Se já está em PiP, sair
+    if (document.pictureInPictureElement) {
+        try {
+            await document.exitPictureInPicture();
+        } catch (e) {
+            console.warn('Erro ao sair do PiP:', e);
+        }
+        return;
+    }
+
+    const iframe = document.getElementById('plIframe');
+    let video = null;
+
+    // Tenta acessar o <video> dentro do iframe (funciona para same-origin
+    // e, em navegadores modernos, também para cross-origin com allow="picture-in-picture")
+    try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (iframeDoc) {
+            video = iframeDoc.querySelector('video');
+        }
+    } catch (e) {
+        // Cross-origin — sem acesso direto ao DOM do iframe
+    }
+
+    if (video) {
+        try {
+            await video.requestPictureInPicture();
+            return;
+        } catch (e) {
+            console.warn('PiP falhou no <video>:', e);
+        }
+    }
+
+    // Fallback: instrução manual para o usuário
     toast('Clique com o botão direito no vídeo e selecione "Picture-in-Picture"', 'info');
     document.getElementById('pipNote').style.display = 'flex';
     setTimeout(() => {

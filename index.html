@@ -2754,6 +2754,7 @@ let searchNextPageToken = '';   // YouTube nextPageToken
 let searchIsFilm        = false;
 let searchCurrentQ      = '';
 let searchDurations     = {};   // videoId → formatted duration string
+let searchDurationSecs  = {};   // videoId → duration in seconds
 
 // Player state
 let queue    = [];
@@ -2890,6 +2891,62 @@ function clearCatPick() {
     document.getElementById('catSelectedDisplay').classList.add('hidden');
 }
 
+function _normalizeSearchText(str = '') {
+    return String(str)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+}
+
+function _isoDurationToSeconds(iso) {
+    if (!iso) return 0;
+    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!m) return 0;
+    const h = parseInt(m[1] || 0, 10);
+    const min = parseInt(m[2] || 0, 10);
+    const sec = parseInt(m[3] || 0, 10);
+    return (h * 3600) + (min * 60) + sec;
+}
+
+function _isUndesiredMusicResult(item) {
+    const title = _normalizeSearchText(item?.snippet?.title || '');
+    const desc  = _normalizeSearchText(item?.snippet?.description || '');
+    const text  = `${title} ${desc}`;
+    const blockedTerms = ['trailer','teaser','preview','sample','amostra','trecho','snippet','shorts'];
+    return blockedTerms.some(term => text.includes(term));
+}
+
+function _scoreMusicResult(item) {
+    const vid   = item?.id?.videoId || '';
+    const title = _normalizeSearchText(item?.snippet?.title || '');
+    const desc  = _normalizeSearchText(item?.snippet?.description || '');
+    const ch    = _normalizeSearchText(item?.snippet?.channelTitle || '');
+    const text  = `${title} ${desc} ${ch}`;
+    const secs  = searchDurationSecs[vid] || 0;
+    let score = 0;
+
+    const albumBoosts = [
+        'full album', 'album completo', 'complete album', 'playlist completa',
+        'coletanea completa', 'coletanea', 'discografia', 'greatest hits', 'ao vivo completo'
+    ];
+    albumBoosts.forEach(term => {
+        if (text.includes(term)) score += 18;
+    });
+
+    if (title.includes('album')) score += 10;
+    if (title.includes('full')) score += 4;
+    if (title.includes('mix')) score += 3;
+
+    if (secs >= 3600) score += 16;
+    else if (secs >= 2400) score += 12;
+    else if (secs >= 1200) score += 8;
+    else if (secs >= 900) score += 5;
+    else if (secs > 0 && secs < 240) score -= 12;
+
+    if (text.includes('trailer') || text.includes('sample') || text.includes('amostra')) score -= 30;
+    return score;
+}
+
 /* ─── YOUTUBE SEARCH ─────────────────────────── */
 async function searchYT(genre) {
     currentGenre = genre;
@@ -2897,12 +2954,13 @@ async function searchYT(genre) {
     searchIsFilm   = !!(genreObj && genreObj.type === 'film');
     searchNextPageToken = '';
     searchDurations     = {};
+    searchDurationSecs  = {};
 
     // Film search: target full movies/episodes (long videos)
     if (searchIsFilm) {
         searchCurrentQ = `${genre} filme completo dublado legendado`;
     } else {
-        searchCurrentQ = `${genre} music`;
+        searchCurrentQ = `${genre} full album album completo complete album playlist completa -trailer -teaser -preview -sample -amostra`;
     }
 
     const modalTitle = searchIsFilm
@@ -2939,7 +2997,7 @@ async function _fetchSearchPage(replace) {
         const d = await r.json();
         if (d.error) throw new Error(d.error.message);
 
-        const items = d.items || [];
+        let items = d.items || [];
         searchNextPageToken = d.nextPageToken || '';
 
         if (replace) {
@@ -2959,10 +3017,18 @@ async function _fetchSearchPage(replace) {
                     );
                     const dd = await dr.json();
                     (dd.items || []).forEach(v => {
-                        searchDurations[v.id] = _parseDuration(v.contentDetails?.duration || '');
+                        const iso = v.contentDetails?.duration || '';
+                        searchDurations[v.id]    = _parseDuration(iso);
+                        searchDurationSecs[v.id] = _isoDurationToSeconds(iso);
                     });
                 } catch(_) {}
             }
+        }
+
+        if (!searchIsFilm && items.length) {
+            items = items
+                .filter(item => !_isUndesiredMusicResult(item))
+                .sort((a, b) => _scoreMusicResult(b) - _scoreMusicResult(a));
         }
 
         if (!replace) {

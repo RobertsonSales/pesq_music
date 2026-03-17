@@ -1780,11 +1780,13 @@
     </div>
 </div>
 
-<!-- Dica PiP -->
-<div class="pip-note" id="pipNote">
-    <i class="fas fa-info-circle"></i>
-    <span>Para continuar assistindo em segundo plano, use o botão <i class="fas fa-clone"></i> Picture-in-Picture.</span>
-    <button class="pip-btn" onclick="document.getElementById('pipNote').style.display='none'">Entendi</button>
+<!-- Dica PiP (conteúdo preenchido dinamicamente via JS) -->
+<div class="pip-note" id="pipNote" role="alert" aria-live="polite">
+    <i class="fas fa-info-circle" id="pipNoteIcon"></i>
+    <span id="pipNoteText"></span>
+    <button class="pip-btn" onclick="document.getElementById('pipNote').style.display='none'">
+        <i class="fas fa-times"></i> Fechar
+    </button>
 </div>
 
 <!-- ═══════════════ TUTORIAL MODAL ══════════════════════ -->
@@ -3592,39 +3594,83 @@ window.addEventListener('message', e => {
 });
 
 /* ─── PICTURE-IN-PICTURE ─────────────────────── */
-let _pipWindow = null;
+
+/* Detecta Android (User-Agent é a única forma confiável no browser) */
+const _isAndroid = /android/i.test(navigator.userAgent);
+const _isIOS     = /iphone|ipad|ipod/i.test(navigator.userAgent);
+let   _pipWindow = null;
+
+function _showPipNote(html, autoHideMs = 0) {
+    const note = document.getElementById('pipNote');
+    document.getElementById('pipNoteText').innerHTML = html;
+    note.style.display = 'flex';
+    if (autoHideMs > 0) {
+        setTimeout(() => { note.style.display = 'none'; }, autoHideMs);
+    }
+}
 
 async function requestPictureInPicture() {
     const iframe    = document.getElementById('plIframe');
     const videoArea = document.getElementById('plVideoArea');
 
-    /* ── 1. Fechar PiP se já estiver aberto ── */
-    if (_pipWindow && !_pipWindow.closed) {
-        _pipWindow.close();
+    /* ══════════════════════════════════════════════════
+       CAMINHO A — Android Chrome
+       Nenhuma API JS funciona para iframes cross-origin
+       no Android. O PiP nativo do SO é a única opção.
+    ══════════════════════════════════════════════════ */
+    if (_isAndroid) {
+        _showPipNote(
+            '<strong>PiP no Android:</strong> com o vídeo tocando, ' +
+            'pressione o botão <strong>Home</strong> (ou use o gesto de voltar ' +
+            'para a tela inicial). O Android ativará o Picture-in-Picture ' +
+            'automaticamente. Certifique-se de que o Chrome tem permissão ' +
+            'de PiP em <em>Configurações › Aplicativos › Chrome › PiP</em>.'
+        );
         return;
     }
 
-    /* ── 2. Document Picture-in-Picture API (Chrome 116+) ──
-       Move o iframe inteiro para a janela flutuante.
-       É a única forma confiável de fazer PiP com iframes cross-origin. */
+    /* ══════════════════════════════════════════════════
+       CAMINHO B — iOS Safari
+       iOS não suporta Document PiP nem permite JS PiP
+       em iframes. Instrução específica.
+    ══════════════════════════════════════════════════ */
+    if (_isIOS) {
+        _showPipNote(
+            '<strong>PiP no iPhone/iPad:</strong> toque no ícone de tela ' +
+            'cheia dentro do vídeo e depois no ícone PiP (dois retângulos ' +
+            'sobrepostos) que aparece no canto do player.'
+        );
+        return;
+    }
+
+    /* ══════════════════════════════════════════════════
+       CAMINHO C — Chrome Desktop 116+
+       Document PiP: move o iframe para janela flutuante.
+       É a única forma de PiP com iframes cross-origin
+       em desktop (YouTube, etc.).
+    ══════════════════════════════════════════════════ */
     if ('documentPictureInPicture' in window) {
+        /* Fechar se já estiver aberto */
+        if (_pipWindow && !_pipWindow.closed) {
+            _pipWindow.close();
+            return;
+        }
         try {
             _pipWindow = await window.documentPictureInPicture.requestWindow({
-                width : Math.min(640, Math.round(window.innerWidth  * 0.55)),
-                height: Math.min(380, Math.round(window.innerHeight * 0.50)),
+                width : Math.min(640, Math.round(screen.width  * 0.50)),
+                height: Math.min(390, Math.round(screen.height * 0.45)),
                 disallowReturnToOpener: false
             });
 
-            /* Estilos mínimos para o iframe preencher a janela PiP */
-            const style = _pipWindow.document.createElement('style');
-            style.textContent = `
-                * { margin:0; padding:0; box-sizing:border-box; }
-                body { background:#000; width:100%; height:100%; overflow:hidden; }
-                iframe { width:100%; height:100%; border:none; display:block; }
-            `;
-            _pipWindow.document.head.appendChild(style);
+            /* CSS mínimo para o iframe preencher a janela PiP */
+            const s = _pipWindow.document.createElement('style');
+            s.textContent =
+                '* { margin:0; padding:0; box-sizing:border-box; }' +
+                'body { background:#000; width:100vw; height:100vh; overflow:hidden; }' +
+                'iframe { width:100%; height:100%; border:none; display:block; }';
+            _pipWindow.document.head.appendChild(s);
 
-            /* Move o iframe (preserva reprodução em andamento) */
+            /* Move o iframe — vídeo continua sem recarregar */
             _pipWindow.document.body.appendChild(iframe);
 
             /* Ao fechar a janela PiP, devolve o iframe ao player */
@@ -3637,19 +3683,21 @@ async function requestPictureInPicture() {
             return;
         } catch (err) {
             console.warn('Document PiP falhou:', err);
-            /* Segue para os fallbacks abaixo */
+            /* Cai para o próximo caminho */
         }
     }
 
-    /* ── 3. Element PiP (video nativo same-origin) ──
-       Funciona se o conteúdo for same-origin ou se o navegador
-       permitir acesso cross-origin ao contentDocument. */
+    /* ══════════════════════════════════════════════════
+       CAMINHO D — Outros navegadores desktop
+       Tenta Element PiP no <video> do iframe.
+       Só funciona se o conteúdo for same-origin.
+    ══════════════════════════════════════════════════ */
     if (document.pictureInPictureEnabled) {
         let video = null;
         try {
             const doc = iframe.contentDocument || iframe.contentWindow?.document;
             if (doc) video = doc.querySelector('video');
-        } catch (_) { /* cross-origin bloqueado */ }
+        } catch (_) { /* cross-origin bloqueado — esperado */ }
 
         if (video) {
             try {
@@ -3666,11 +3714,14 @@ async function requestPictureInPicture() {
         }
     }
 
-    /* ── 4. Fallback final: instrução manual ── */
-    toast('Clique com o botão direito no vídeo → "Picture-in-Picture"', 'info');
-    const note = document.getElementById('pipNote');
-    note.style.display = 'flex';
-    setTimeout(() => { note.style.display = 'none'; }, 6000);
+    /* ══════════════════════════════════════════════════
+       CAMINHO E — Fallback final (Firefox, Edge, etc.)
+    ══════════════════════════════════════════════════ */
+    _showPipNote(
+        'Clique com o botão direito sobre o vídeo e escolha ' +
+        '<strong>"Picture-in-Picture"</strong> no menu do navegador.',
+        7000
+    );
 }
 
 /* ─── DRAWERS (mobile) ───────────────────────── */

@@ -2960,6 +2960,7 @@ const GENRE_SEARCH_CONFIG = {
     'Anime': {
         query: 'anime completo dublado OR legendado "episódio completo" OR "temporada completa" -trailer -teaser -opening only',
         catId: '1',
+        isEpisodic: true,
         genreTerms: ['anime','mangá','naruto','one piece','dragon ball','attack on titan','demon slayer','my hero academia','sword art online','fullmetal'],
         rejectTerms: ['live action','documentário','comédia americana','desenho infantil ocidental'],
         isFilm: true
@@ -2967,6 +2968,7 @@ const GENRE_SEARCH_CONFIG = {
     'Séries': {
         query: 'série temporada completa dublada "full season" OR "temporada completa" -trailer -teaser -resumo',
         catId: '1',
+        isEpisodic: true,
         genreTerms: ['série','series','temporada','episódio','season','episode','serie completa','sitcom'],
         rejectTerms: ['animação infantil','documentário curto','trailer apenas'],
         isFilm: true
@@ -3149,21 +3151,29 @@ function _isoDurationToSeconds(iso) {
 }
 
 function _isUndesiredMusicResult(item, config) {
+    const vid   = item?.id?.videoId || '';
     const title = _normalizeSearchText(item?.snippet?.title || '');
     const desc  = _normalizeSearchText(item?.snippet?.description || '');
     const ch    = _normalizeSearchText(item?.snippet?.channelTitle || '');
     const text  = `${title} ${desc} ${ch}`;
 
-    // Bloqueia termos genéricos de conteúdo indesejado
+    // ── Hard cutoff de duração ──────────────────────────────────────────
+    // Um álbum completo tem no mínimo ~25 minutos (1500 s).
+    // Se a duração já foi obtida e é inferior a isso, descarta.
+    // Se ainda não foi obtida (secs === 0), deixa passar — o scoring cuida.
+    const secs = searchDurationSecs[vid] || 0;
+    if (secs > 0 && secs < 1500) return true;   // < 25 min → não é álbum
+
+    // ── Termos que delatam conteúdo curto / indesejado ──────────────────
     const blockedTerms = [
         'trailer','teaser','preview','sample','amostra','trecho',
         'snippet','#shorts','short clip','music video only','mv only',
-        'opening only','clipe oficial apenas','promo','promocional'
+        'opening only','clipe oficial apenas','promo','promocional',
+        'lyric video only','official video only','visualizer only'
     ];
     if (blockedTerms.some(term => text.includes(term))) return true;
 
-    // Verifica contaminação de gênero: resultado com termos de outro
-    // gênero e sem nenhum termo do gênero selecionado → descarta
+    // ── Contaminação de gênero ──────────────────────────────────────────
     if (config?.rejectTerms && config?.genreTerms) {
         const normReject = config.rejectTerms.map(t => _normalizeSearchText(t));
         const normGenre  = config.genreTerms.map(t => _normalizeSearchText(t));
@@ -3199,11 +3209,11 @@ function _scoreMusicResult(item, config) {
     if (title.includes('mix'))   score += 3;
 
     // Boost por duração (preferência por conteúdo longo = álbum completo)
-    if (secs >= 3600)      score += 18;
-    else if (secs >= 2400) score += 14;
-    else if (secs >= 1200) score += 9;
-    else if (secs >= 900)  score += 5;
-    else if (secs > 0 && secs < 180) score -= 15;  // muito curto = single/trecho
+    if (secs >= 3600)      score += 22;
+    else if (secs >= 2400) score += 17;
+    else if (secs >= 1800) score += 12;
+    else if (secs >= 1500) score += 6;
+    else if (secs > 0 && secs < 1500) score -= 50;  // < 25 min → desce ao fundo
 
     // Penalidade por conteúdo indesejado
     if (text.includes('trailer') || text.includes('sample') || text.includes('amostra')) score -= 30;
@@ -3227,14 +3237,33 @@ function _scoreMusicResult(item, config) {
 }
 
 function _isUndesiredFilmResult(item, config) {
+    const vid   = item?.id?.videoId || '';
     const title = _normalizeSearchText(item?.snippet?.title || '');
     const desc  = _normalizeSearchText(item?.snippet?.description || '');
     const ch    = _normalizeSearchText(item?.snippet?.channelTitle || '');
     const text  = `${title} ${desc} ${ch}`;
 
-    const blockedTerms = ['trailer','teaser','preview','clipe','opening only','resumo apenas','recap','highlight'];
+    // ── Hard cutoff de duração ──────────────────────────────────────────
+    // Anime e Séries: episódio mínimo ~18 min (1080 s)
+    // Documentário:   mínimo ~35 min (2100 s)
+    // Demais filmes:  mínimo ~50 min (3000 s) — evita "filmes" curtos
+    const secs = searchDurationSecs[vid] || 0;
+    if (secs > 0) {
+        const isEpisodic = config?.isEpisodic;   // Anime / Séries
+        const isDoc      = currentGenre === 'Documentário';
+        const minSecs    = isEpisodic ? 1080 : isDoc ? 2100 : 3000;
+        if (secs < minSecs) return true;
+    }
+
+    // ── Termos que delatam conteúdo curto / indesejado ──────────────────
+    const blockedTerms = [
+        'trailer','teaser','preview','clipe','opening only',
+        'resumo apenas','recap','highlight','best moments',
+        'cenas deletadas','making of','bastidores','short film apenas'
+    ];
     if (blockedTerms.some(term => text.includes(term))) return true;
 
+    // ── Contaminação de gênero ──────────────────────────────────────────
     if (config?.rejectTerms && config?.genreTerms) {
         const normReject = config.rejectTerms.map(t => _normalizeSearchText(t));
         const normGenre  = config.genreTerms.map(t => _normalizeSearchText(t));
@@ -3258,11 +3287,11 @@ function _scoreFilmResult(item, config) {
     const filmBoosts = ['completo','full movie','filme inteiro','legendado','dublado','temporada completa','full season','episodio completo'];
     filmBoosts.forEach(term => { if (text.includes(term)) score += 16; });
 
-    if (secs >= 4800)      score += 20;
-    else if (secs >= 3600) score += 16;
+    if (secs >= 4800)      score += 22;
+    else if (secs >= 3600) score += 18;
     else if (secs >= 2400) score += 10;
-    else if (secs >= 1800) score += 6;
-    else if (secs > 0 && secs < 600) score -= 20;
+    else if (secs >= 1800) score += 5;
+    else if (secs > 0 && secs < 1800) score -= 50;  // < 30 min → desce ao fundo
 
     if (text.includes('trailer') || text.includes('teaser')) score -= 40;
     if (text.includes('clipe'))   score -= 25;
@@ -3325,8 +3354,9 @@ async function _fetchSearchPage(replace) {
 
     try {
         // Build search URL via proxy — a chave é injetada no servidor
-        let url = `/api/proxy?endpoint=search&part=snippet&q=${encodeURIComponent(searchCurrentQ)}&type=video&maxResults=20`;
-        if (searchIsFilm)                  url += `&videoDuration=long`;
+        // videoDuration=long (>20 min) para TODOS os tipos: exclui singles,
+        // clipes e trailers já na camada da API do YouTube.
+        let url = `/api/proxy?endpoint=search&part=snippet&q=${encodeURIComponent(searchCurrentQ)}&type=video&maxResults=20&videoDuration=long`;
         if (searchNextPageToken)           url += `&pageToken=${encodeURIComponent(searchNextPageToken)}`;
         if (searchGenreConfig?.catId)      url += `&videoCategoryId=${searchGenreConfig.catId}`;
 

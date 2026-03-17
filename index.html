@@ -3152,6 +3152,28 @@ function _isoDurationToSeconds(iso) {
     return (h * 3600) + (min * 60) + sec;
 }
 
+/* ─── CORTE MÍNIMO DE DURAÇÃO (centralizado) ────────────────────────
+   Chamado DEPOIS do fetch de contentDetails, para garantir que
+   searchDurationSecs já esteja populado.
+   Retorna true quando o vídeo é curto demais para ser um álbum/filme completo.
+   ─────────────────────────────────────────────────────────────────── */
+function _failsDurationCutoff(vid, isFilm, isEpisodic) {
+    const secs = searchDurationSecs[vid] || 0;
+    if (secs === 0) return false;   // duração desconhecida → não rejeita aqui
+
+    if (!isFilm) {
+        // Música: álbum completo tem ≥ 25 min (1 500 s)
+        // Aceita ≥ 20 min (1 200 s) para mini-álbuns / EPs conhecidos
+        return secs < 1200;
+    }
+    // Filmes episódicos (Anime / Séries): episódio mínimo ~18 min
+    if (isEpisodic) return secs < 1080;
+    // Documentários: ≥ 35 min
+    if (currentGenre === 'Documentário') return secs < 2100;
+    // Demais filmes: ≥ 45 min
+    return secs < 2700;
+}
+
 function _isUndesiredMusicResult(item, config) {
     const vid   = item?.id?.videoId || '';
     const title = _normalizeSearchText(item?.snippet?.title || '');
@@ -3369,26 +3391,9 @@ async function _fetchSearchPage(replace) {
         let items = d.items || [];
         searchNextPageToken = d.nextPageToken || '';
 
-        // Deduplicação global: garante que o mesmo videoId jamais apareça
-        // duas vezes — nem dentro do lote, nem entre páginas consecutivas.
-        const _knownIds = new Set(searchItems.map(it => it.id?.videoId).filter(Boolean));
-        items = items.filter(it => {
-            const vid = it.id?.videoId;
-            if (!vid || _knownIds.has(vid)) return false;
-            _knownIds.add(vid);
-            return true;
-        });
-
-        if (replace) {
-            searchItems = items;
-        } else {
-            searchItems = [...searchItems, ...items];
-        }
-
-        // Fetch content details (duration) for every new batch,
-        // so músicas and filmes/séries exibem o tempo de duração.
+        // ── 1. Fetch de duração PRIMEIRO (antes de qualquer dedup/filtro) ──────
         if (items.length) {
-            const ids = items.map(it => it.id.videoId).filter(Boolean).join(',');
+            const ids = items.map(it => it.id?.videoId).filter(Boolean).join(',');
             if (ids) {
                 try {
                     const dr = await fetch(
@@ -3404,6 +3409,27 @@ async function _fetchSearchPage(replace) {
             }
         }
 
+        // ── 2. Deduplicação (agora searchDurationSecs já está populado) ────────
+        const _knownIds = new Set(searchItems.map(it => it.id?.videoId).filter(Boolean));
+        items = items.filter(it => {
+            const vid = it.id?.videoId;
+            if (!vid || _knownIds.has(vid)) return false;
+            _knownIds.add(vid);
+            return true;
+        });
+
+        // ── 3. Corte mínimo de duração — rejeição incondicional ───────────────
+        //    Eliminado aqui para que _isUndesiredMusicResult/Film encontre secs > 0.
+        const _isEpisodic = !!(searchGenreConfig?.isEpisodic);
+        items = items.filter(it => !_failsDurationCutoff(it.id?.videoId || '', searchIsFilm, _isEpisodic));
+
+        if (replace) {
+            searchItems = items;
+        } else {
+            searchItems = [...searchItems, ...items];
+        }
+
+        // ── 4. Filtros de texto e pontuação ────────────────────────────────────
         if (!searchIsFilm && items.length) {
             items = items
                 .filter(item => !_isUndesiredMusicResult(item, searchGenreConfig))
@@ -3819,7 +3845,8 @@ async function performWebSearch(append) {
     }
 
     try {
-        let url = `/api/proxy?endpoint=search&part=snippet&q=${encodeURIComponent(term)}&type=video&maxResults=20`;
+        // videoDuration=long exclui Singles / Clipes (<20 min) já na API
+        let url = `/api/proxy?endpoint=search&part=snippet&q=${encodeURIComponent(term)}&type=video&maxResults=20&videoDuration=long`;
         if (webSearchNextToken) url += `&pageToken=${encodeURIComponent(webSearchNextToken)}`;
 
         const r = await fetch(url);
@@ -3827,10 +3854,11 @@ async function performWebSearch(append) {
         if (d.error) throw new Error(d.error.message);
 
         webSearchNextToken = d.nextPageToken || '';
-        const items = d.items || [];
+        let items = d.items || [];
 
-        // Busca duração de cada vídeo do lote
-        const wsDurations = {};
+        // ── Busca duração ANTES de filtrar ──────────────────────────────────
+        const wsDurations    = {};
+        const wsDurationSecs = {};
         if (items.length) {
             const ids = items.map(it => it.id?.videoId).filter(Boolean).join(',');
             if (ids) {
@@ -3838,17 +3866,26 @@ async function performWebSearch(append) {
                     const dr = await fetch(`/api/proxy?endpoint=videos&part=contentDetails&id=${ids}`);
                     const dd = await dr.json();
                     (dd.items || []).forEach(v => {
-                        wsDurations[v.id] = _parseDuration(v.contentDetails?.duration || '');
+                        const iso = v.contentDetails?.duration || '';
+                        wsDurations[v.id]    = _parseDuration(iso);
+                        wsDurationSecs[v.id] = _isoDurationToSeconds(iso);
                     });
                 } catch(_) {}
             }
         }
 
+        // ── Corte mínimo: ≥ 20 min (1 200 s) para busca livre ───────────────
+        // Mais permissivo que a busca por gênero para aceitar EPs e lives curtos.
+        items = items.filter(it => {
+            const secs = wsDurationSecs[it.id?.videoId] || 0;
+            return secs === 0 || secs >= 1200;
+        });
+
         if (!append) resultsDiv.innerHTML = '';
         else { const tmp = resultsDiv.querySelector('.loading-wrap'); if (tmp) tmp.remove(); }
 
         if (!items.length && !append) {
-            resultsDiv.innerHTML = '<div class="loading-wrap"><i class="fas fa-inbox" style="font-size:2.5rem;opacity:0.4;"></i><p>Nenhum resultado.</p></div>';
+            resultsDiv.innerHTML = '<div class="loading-wrap"><i class="fas fa-inbox" style="font-size:2.5rem;opacity:0.4;"></i><p>Nenhum resultado com duração suficiente. Tente outros termos.</p></div>';
             return;
         }
 
@@ -3861,7 +3898,7 @@ async function performWebSearch(append) {
             const yr    = (item.snippet?.publishedAt || '').substring(0,4);
             const thumb = item.snippet?.thumbnails?.default?.url || '';
             const url2  = `https://www.youtube.com/watch?v=${vid}`;
-            const dur   = wsDurations[vid] || '';
+            const dur   = wsDurations[vid] || '';   // string formatada ex: '45m 30s'
             const durBadge = dur
                 ? `<span class="m-duration short" style="margin-left:4px;">
                        <i class="fas fa-clock" aria-hidden="true"></i> ${dur}

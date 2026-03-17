@@ -1348,19 +1348,19 @@
             bottom: 80px;
             left: 10px;
             right: 10px;
-            background: rgba(20,20,45,0.97);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            background: rgba(14,14,32,0.97);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             color: white;
             padding: 14px 16px 12px;
             border-radius: var(--radius-md);
-            font-size: 0.85rem;
+            font-size: 0.84rem;
             display: none;
             flex-direction: column;
             gap: 10px;
             z-index: 1400;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+            border: 1px solid rgba(255,255,255,0.08);
             border-left: 4px solid #ffd200;
         }
 
@@ -1369,50 +1369,48 @@
             align-items: center;
             gap: 8px;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             color: #ffd200;
         }
-
-        .pip-note-header i { font-size: 1rem; }
 
         .pip-note-steps {
             display: flex;
             flex-direction: column;
             gap: 7px;
-            padding-left: 2px;
         }
 
         .pip-note-step {
             display: flex;
             align-items: flex-start;
             gap: 10px;
-            font-size: 0.82rem;
-            color: rgba(255,255,255,0.9);
-            line-height: 1.4;
+            font-size: 0.81rem;
+            color: rgba(255,255,255,0.88);
+            line-height: 1.45;
         }
 
         .pip-step-num {
             background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
             border-radius: 50%;
-            width: 20px;
+            min-width: 20px;
             height: 20px;
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            margin-top: 1px;
+            margin-top: 2px;
         }
 
         .pip-note-footer {
             display: flex;
             justify-content: flex-end;
+            padding-top: 2px;
         }
 
         .pip-btn {
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.22);
             border-radius: var(--radius-sm);
             color: white;
             padding: 6px 14px;
@@ -1788,9 +1786,10 @@
     <div class="pl-video-area" id="plVideoArea">
         <iframe id="plIframe"
             src="about:blank"
-            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture; web-share"
             allowfullscreen
-            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms allow-popups allow-popups-to-escape-sandbox"
+            allowpictureInPicture
+            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
             referrerpolicy="strict-origin-when-cross-origin"
             title="Reprodutor de mídia isolado">
         </iframe>
@@ -1829,7 +1828,7 @@
     </div>
 </div>
 
-<!-- Painel PiP (conteúdo preenchido dinamicamente por showPipGuide()) -->
+<!-- Painel PiP (conteúdo preenchido dinamicamente por showPipGuide) -->
 <div id="pipNote" role="alert" aria-live="polite"></div>
 
 <!-- ═══════════════ TUTORIAL MODAL ══════════════════════ -->
@@ -3639,25 +3638,27 @@ window.addEventListener('message', e => {
 /* ─── PICTURE-IN-PICTURE ─────────────────────── */
 const _isAndroid = /android/i.test(navigator.userAgent);
 const _isIOS     = /iphone|ipad|ipod/i.test(navigator.userAgent);
-let   _pipWindow = null;
+let   _pipWindow  = null;
 let   _pipNoteTimer = null;
 
-/**
- * Exibe o painel de orientação PiP com passos numerados.
- * @param {string} title      Título do painel
- * @param {string[]} steps    Array de strings HTML, uma por passo
- * @param {number} autoHideMs 0 = não esconde automaticamente
- */
-function showPipGuide(title, steps, autoHideMs = 0) {
+/* Obtém a URL "watch" do item atual na fila */
+function _currentWatchURL() {
+    if (!queue.length || qIdx < 0) return null;
+    const item = queue[qIdx];
+    const vid  = item.videoId || extractVid(item.url);
+    if (vid) return `https://www.youtube.com/watch?v=${vid}`;
+    return item.url || null;
+}
+
+/* ── Painel de orientação com passos numerados ── */
+function showPipGuide(title, steps, autoHideMs) {
     clearTimeout(_pipNoteTimer);
     const note = document.getElementById('pipNote');
-
     const stepsHTML = steps.map((s, i) => `
         <div class="pip-note-step">
             <div class="pip-step-num">${i + 1}</div>
             <div>${s}</div>
         </div>`).join('');
-
     note.className = 'pip-note';
     note.innerHTML = `
         <div class="pip-note-header">
@@ -3671,10 +3672,7 @@ function showPipGuide(title, steps, autoHideMs = 0) {
             </button>
         </div>`;
     note.style.display = 'flex';
-
-    if (autoHideMs > 0) {
-        _pipNoteTimer = setTimeout(hidePipGuide, autoHideMs);
-    }
+    if (autoHideMs > 0) _pipNoteTimer = setTimeout(hidePipGuide, autoHideMs);
 }
 
 function hidePipGuide() {
@@ -3683,101 +3681,101 @@ function hidePipGuide() {
 }
 
 async function requestPictureInPicture() {
-    const iframe    = document.getElementById('plIframe');
-    const videoArea = document.getElementById('plVideoArea');
-
-    /* ── Fechar guia se estiver visível ── */
+    /* Toggle: fechar guia se já estiver visível */
     const note = document.getElementById('pipNote');
-    if (note.style.display === 'flex') {
-        hidePipGuide();
-        return;
-    }
+    if (note.style.display === 'flex') { hidePipGuide(); return; }
 
-    /* ══════════════════════════════════════════════════════
-       ANDROID — o PiP da aba inteira (botão Home) mostra
-       o browser todo, NÃO o vídeo isolado.
-       O caminho correto é usar o botão PiP nativo que o
-       próprio player do YouTube exibe dentro do iframe.
-    ══════════════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════
+       ANDROID
+       ── O iframe cross-origin (YouTube) nunca expõe o elemento
+          <video> ao JavaScript da página — bloquio de segurança
+          do browser. Nenhuma API JS resolve isso.
+       ── A solução real é abrir o vídeo diretamente no app do
+          YouTube, que tem PiP e reprodução em segundo plano
+          nativos e funcionais.
+    ══════════════════════════════════════════════════════════ */
     if (_isAndroid) {
-        showPipGuide('Picture-in-Picture no Android', [
-            'Toque sobre o vídeo para exibir os controles do YouTube.',
-            'Toque no ícone de <strong>tela cheia</strong> ' +
-                '(<i class="fas fa-expand"></i>) no canto inferior direito do player.',
-            'No player em tela cheia, toque novamente no ícone ' +
-                '<strong>PiP</strong> (dois retângulos sobrepostos) ' +
-                'que aparece na barra de controles — o vídeo flutuará sobre outros apps.',
-            '<em>Alternativa:</em> com o vídeo tocando, pressione o botão ' +
-                '<strong>Home</strong> e então toque no ícone PiP ' +
-                'que o Chrome exibe na notificação de mídia.'
-        ]);
-        return;
-    }
+        const watchURL = _currentWatchURL();
 
-    /* ══════════════════════════════════════════════════════
-       iOS — Safari expõe PiP via controles nativos do vídeo
-    ══════════════════════════════════════════════════════ */
-    if (_isIOS) {
-        showPipGuide('Picture-in-Picture no iPhone / iPad', [
-            'Toque no vídeo para exibir os controles.',
-            'Toque no ícone de <strong>tela cheia</strong> para expandir.',
-            'Toque no ícone <strong>PiP</strong> (dois retângulos) ' +
-                'que aparece no canto superior esquerdo do player.',
-            'O vídeo flutuará sobre o restante da tela.'
-        ]);
-        return;
-    }
-
-    /* ══════════════════════════════════════════════════════
-       CHROME DESKTOP 116+ — Document Picture-in-Picture API
-       Move o iframe inteiro para uma janela flutuante,
-       preservando a reprodução cross-origin sem recarregar.
-    ══════════════════════════════════════════════════════ */
-    if ('documentPictureInPicture' in window) {
-        if (_pipWindow && !_pipWindow.closed) {
-            _pipWindow.close();
-            return;
+        if (watchURL && watchURL.includes('youtube.com/watch')) {
+            /* Tenta abrir no app YouTube via intent Android.
+               Se o app não estiver instalado, o Chrome abre no browser. */
+            const intentURL =
+                `intent://${watchURL.replace(/^https?:\/\//, '')}` +
+                `#Intent;package=com.google.android.youtube;` +
+                `scheme=https;` +
+                `S.browser_fallback_url=${encodeURIComponent(watchURL)};end`;
+            window.location.href = intentURL;
+        } else if (watchURL) {
+            /* Spotify, SoundCloud, etc. — abrir no browser */
+            window.open(watchURL, '_blank', 'noopener');
+        } else {
+            showPipGuide('Nenhum conteúdo ativo', [
+                'Selecione um item para reproduzir antes de usar o PiP.'
+            ], 4000);
         }
+        return;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       iOS — Safari expõe PiP via controles nativos do player
+    ══════════════════════════════════════════════════════════ */
+    if (_isIOS) {
+        const watchURL = _currentWatchURL();
+        if (watchURL) {
+            showPipGuide('Picture-in-Picture no iPhone / iPad', [
+                'Toque no vídeo para exibir os controles do player.',
+                'Toque no ícone de <strong>tela cheia</strong> para expandir.',
+                'Toque no ícone <strong>PiP</strong> (dois retângulos sobrepostos) ' +
+                    'que aparece no canto superior esquerdo — o vídeo flutuará.',
+                `Ou: <a href="${watchURL}" target="_blank" rel="noopener"
+                    style="color:var(--accent-3);text-decoration:underline;">
+                    Abrir no YouTube</a> para PiP e reprodução em segundo plano.`
+            ]);
+        }
+        return;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       CHROME DESKTOP 116+ — Document Picture-in-Picture API
+       Move o iframe inteiro para janela flutuante sem recarregar.
+    ══════════════════════════════════════════════════════════ */
+    if ('documentPictureInPicture' in window) {
+        if (_pipWindow && !_pipWindow.closed) { _pipWindow.close(); return; }
+        const iframe    = document.getElementById('plIframe');
+        const videoArea = document.getElementById('plVideoArea');
         try {
             _pipWindow = await window.documentPictureInPicture.requestWindow({
                 width : Math.min(640, Math.round(screen.width  * 0.50)),
                 height: Math.min(390, Math.round(screen.height * 0.45)),
                 disallowReturnToOpener: false
             });
-
             const s = _pipWindow.document.createElement('style');
             s.textContent =
                 '* { margin:0; padding:0; box-sizing:border-box; }' +
                 'body { background:#000; width:100vw; height:100vh; overflow:hidden; }' +
                 'iframe { width:100%; height:100%; border:none; display:block; }';
             _pipWindow.document.head.appendChild(s);
-
-            /* Move o iframe — reprodução continua sem interrupção */
             _pipWindow.document.body.appendChild(iframe);
-
             _pipWindow.addEventListener('pagehide', () => {
                 videoArea.appendChild(iframe);
                 _pipWindow = null;
             });
-
             toast('▶ Reproduzindo em Picture-in-Picture', 'success');
             return;
-        } catch (err) {
-            console.warn('Document PiP falhou:', err);
-        }
+        } catch (err) { console.warn('Document PiP falhou:', err); }
     }
 
-    /* ══════════════════════════════════════════════════════
-       OUTROS DESKTOPS — Element PiP no <video> do iframe
-       (só funciona para conteúdo same-origin)
-    ══════════════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════
+       OUTROS DESKTOPS — Element PiP (same-origin apenas)
+    ══════════════════════════════════════════════════════════ */
     if (document.pictureInPictureEnabled) {
+        const iframe = document.getElementById('plIframe');
         let video = null;
         try {
             const doc = iframe.contentDocument || iframe.contentWindow?.document;
             if (doc) video = doc.querySelector('video');
-        } catch (_) { /* cross-origin bloqueado — esperado */ }
-
+        } catch (_) {}
         if (video) {
             try {
                 if (document.pictureInPictureElement) {
@@ -3787,15 +3785,13 @@ async function requestPictureInPicture() {
                     toast('▶ Reproduzindo em Picture-in-Picture', 'success');
                 }
                 return;
-            } catch (err) {
-                console.warn('Element PiP falhou:', err);
-            }
+            } catch (err) { console.warn('Element PiP falhou:', err); }
         }
     }
 
-    /* ══════════════════════════════════════════════════════
-       FALLBACK — Firefox / Edge / demais navegadores desktop
-    ══════════════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════
+       FALLBACK — Firefox / Edge / demais
+    ══════════════════════════════════════════════════════════ */
     showPipGuide('Picture-in-Picture', [
         'Clique com o <strong>botão direito</strong> sobre o vídeo.',
         'Escolha <strong>"Picture-in-Picture"</strong> no menu do navegador.'

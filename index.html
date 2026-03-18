@@ -3626,7 +3626,7 @@ function addSelectedToPlaylist() {
 
     let added = 0;
     boxes.forEach(cb => {
-        if (playlist.length >= 20) { toast('Limite de 20 itens atingido!', 'warning'); return; }
+        if (playlist.length >= 10) { toast('Limite de 10 itens atingido. Adiquira a versão PRO!', 'warning'); return; }
         if (playlist.find(p => p.url === cb.value)) return;
         playlist.push({
             id:       Date.now() + Math.random(),
@@ -3823,7 +3823,7 @@ function suggestAmount(amount) {
 
 /* ─── CUSTOM LINK ────────────────────────────── */
 function openCustomModal() {
-    if (playlist.length >= 20) { toast('Limite de 20 itens!', 'warning'); return; }
+    if (playlist.length >= 10) { toast('Limite de 10 itens atingido. Adquira a versão PRO!', 'warning'); return; }
     ['fTitle','fArtist','fAlbum','fUrl'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('webSearchTerm').value = '';
     clearCatPick();
@@ -3842,7 +3842,7 @@ function addCustomLink() {
     if (!url)   { toast('Digite uma URL', 'error'); return; }
     if (!validURL(url)) { toast('URL inválida', 'error'); return; }
     if (playlist.find(p => p.url === url)) { toast('Link já existe na playlist', 'warning'); return; }
-    if (playlist.length >= 20) { toast('Limite atingido', 'warning'); return; }
+    if (playlist.length >= 10) { toast('Limite de 10 itens atingido. Adquira a versão PRO!', 'warning'); return; }
 
     playlist.push({
         id: Date.now() + Math.random(),

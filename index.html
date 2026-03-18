@@ -2682,6 +2682,25 @@
 <!-- Toast zone -->
 <div class="toast-zone" id="toastZone" aria-live="polite"></div>
 
+<!-- ── BOTÃO FLUTUANTE PIX ─────────────────────── -->
+<button id="pixFloatBtn" onclick="openSupportModal()" aria-label="Apoiar via PIX"
+        style="position:fixed; bottom:85px; right:20px; width:58px; height:58px;
+               background:linear-gradient(135deg,#f093fb,#f5576c); border:none;
+               border-radius:50%; box-shadow:0 8px 25px rgba(245,87,108,0.4);
+               color:#fff; font-size:28px; display:flex; align-items:center;
+               justify-content:center; z-index:9999; transition:all .3s; cursor:pointer;">
+    ❤️
+</button>
+
+<!-- Tooltip do botão flutuante -->
+<div id="pixTooltip" role="tooltip"
+     style="position:fixed; bottom:150px; right:25px; background:#1a1a2e;
+            color:#fff; padding:8px 14px; border-radius:12px; font-size:13px;
+            white-space:nowrap; box-shadow:0 4px 15px rgba(0,0,0,0.5);
+            display:none; z-index:9998;">
+    Apoiar via PIX ❤️
+</div>
+
 <!-- ══════════════════════════════════════════
      JAVASCRIPT (código original + apoio PIX)
 ══════════════════════════════════════════ -->
@@ -3005,14 +3024,7 @@ let queue    = [];
 let qIdx     = 0;
 let autoPlay = true;
 
-/* ─── BOOT ───────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
-    buildCatButtons();
-    buildCatPickerGrid();
-    renderGenres();
-    renderPlaylistPanels();
-
-// === POP-UP INTELIGENTE DE APOIO (aparece após uso real) ===
+/* ─── POP-UP INTELIGENTE DE APOIO ────────────── */
 let donationShown = false;
 
 function showSmartDonation() {
@@ -3026,36 +3038,24 @@ function showSmartDonation() {
     }
 }
 
-// Chama a cada vez que a playlist é atualizada
-const originalSavePl = savePl;
-savePl = function() {
-    originalSavePl();
-    showSmartDonation();
-};
+/* ─── BOOT ───────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+    buildCatButtons();
+    buildCatPickerGrid();
+    renderGenres();
+    renderPlaylistPanels();
 
-// Também verifica ao carregar
-setTimeout(showSmartDonation, 8000);
+    // Envolve savePl para verificar doação a cada atualização da playlist
+    const originalSavePl = savePl;
+    savePl = function() {
+        originalSavePl();
+        showSmartDonation();
+    };
+
+    // Também verifica ao carregar
+    setTimeout(showSmartDonation, 8000);
 
     initSwipeGestures();
-
-<!-- BOTÃO FLUTUANTE PIX -->
-<button id="pixFloatBtn" onclick="openSupportModal()" 
-        style="position:fixed; bottom:85px; right:20px; width:58px; height:58px; 
-               background:linear-gradient(135deg,#f093fb,#f5576c); border:none; 
-               border-radius:50%; box-shadow:0 8px 25px rgba(245,87,108,0.4); 
-               color:#fff; font-size:28px; display:flex; align-items:center; 
-               justify-content:center; z-index:9999; transition:all .3s;">
-    ❤️
-</button>
-
-<!-- Tooltip opcional -->
-<div id="pixTooltip" style="position:fixed; bottom:150px; right:25px; background:#1a1a2e; 
-                           color:#fff; padding:8px 14px; border-radius:12px; font-size:13px; 
-                           white-space:nowrap; box-shadow:0 4px 15px rgba(0,0,0,0.5); 
-                           display:none; z-index:9998;">
-    Apoiar via PIX ❤️
-</div>
-
 });
 
 /* ─── CATEGORY BUTTONS ───────────────────────── */
